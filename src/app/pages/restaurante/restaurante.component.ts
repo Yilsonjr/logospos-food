@@ -60,6 +60,9 @@ import { TableWithOrder } from '../../models/restaurant.models';
           </div>
         </div>
         <div class="d-flex gap-2">
+          <a routerLink="/restaurante/admin" class="btn-kds" style="background:linear-gradient(135deg,#374151 0%,#1f2937 100%)">
+            <i class="bi bi-gear-fill"></i> Configurar
+          </a>
           <a routerLink="/restaurante/cocina" class="btn-kds">
             <span class="kds-dot"></span>
             <i class="bi bi-fire"></i> Pantalla Cocina

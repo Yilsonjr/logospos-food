@@ -1,0 +1,262 @@
+/* ── Page ─────────────────────────────────────────── */
+.ra-page { padding: 0 0.25rem 2rem; }
+
+/* ── Header ───────────────────────────────────────── */
+.ra-header {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+.ra-header-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ra-title   { font-size: 1.15rem; font-weight: 800; color: #111827; margin: 0; }
+.ra-subtitle { font-size: 0.72rem; color: #9ca3af; margin: 0; }
+
+/* ── Tabs ─────────────────────────────────────────── */
+.ra-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 12px;
+  width: fit-content;
+}
+.ra-tab {
+  padding: 7px 18px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.ra-tab.active {
+  background: #fff;
+  color: #6366f1;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+.ra-tab:hover:not(.active) { color: #374151; }
+
+/* ── Card ─────────────────────────────────────────── */
+.ra-card {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+  padding: 1.25rem;
+}
+.ra-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ra-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Buttons ──────────────────────────────────────── */
+.ra-btn-add {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ra-btn-add:hover:not(:disabled) { background: #4f46e5; }
+.ra-btn-add:disabled { opacity: .5; cursor: not-allowed; }
+
+.ra-btn-save {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 14px; border-radius: 8px; border: none;
+  background: #22c55e; color: #fff;
+  font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  transition: background .15s;
+}
+.ra-btn-save:hover { background: #16a34a; }
+
+.ra-btn-cancel {
+  padding: 5px 14px; border-radius: 8px;
+  border: 1.5px solid #e5e7eb; background: #fff;
+  font-size: 0.78rem; font-weight: 600; color: #6b7280; cursor: pointer;
+}
+.ra-btn-cancel:hover { background: #f9fafb; color: #374151; }
+
+.ra-btn-icon {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem;
+  transition: all .15s;
+}
+.ra-btn-icon.edit { background: #eef2ff; color: #6366f1; }
+.ra-btn-icon.edit:hover { background: #e0e7ff; }
+.ra-btn-icon.del  { background: #fef2f2; color: #ef4444; }
+.ra-btn-icon.del:hover  { background: #fee2e2; }
+.ra-btn-icon.xs { width: 24px; height: 24px; font-size: 0.68rem; border-radius: 5px; }
+
+/* ── Form ─────────────────────────────────────────── */
+.ra-form {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1rem;
+}
+.ra-form-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+.ra-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #9ca3af;
+  margin-bottom: 3px;
+}
+
+/* ── Table ────────────────────────────────────────── */
+.ra-table-wrap { overflow-x: auto; }
+.ra-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+.ra-table th {
+  background: #f8fafc;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #9ca3af;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ra-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f9fafb;
+  vertical-align: middle;
+}
+.ra-table tr:last-child td { border-bottom: none; }
+.ra-table tr:hover td { background: #fafafa; }
+
+/* ── Badges ───────────────────────────────────────── */
+.ra-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: #eef2ff;
+  color: #6366f1;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.ra-cat-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ── Empty ────────────────────────────────────────── */
+.ra-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #9ca3af;
+  font-size: 0.83rem;
+}
+
+/* ── Zona group (mesas) ───────────────────────────── */
+.ra-zona-group { }
+.ra-zona-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.ra-mesas-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ra-mesa-chip {
+  background: #f8fafc;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  min-width: 80px;
+  transition: box-shadow .15s;
+}
+.ra-mesa-chip:hover {
+  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+  border-color: #c7d2fe;
+}
+.ra-mesa-num  { font-size: 1.4rem; font-weight: 900; color: #111827; line-height: 1; }
+.ra-mesa-alias { font-size: 0.62rem; color: #9ca3af; }
+.ra-mesa-cap  { font-size: 0.68rem; color: #6b7280; margin-top: 3px; }
+
+/* ── Category grid ────────────────────────────────── */
+.ra-cat-grid { display: flex; flex-direction: column; gap: 8px; }
+.ra-cat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid #f0f0f0;
+  transition: box-shadow .15s;
+}
+.ra-cat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+.ra-cat-icon {
+  font-size: 1.5rem;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  flex-shrink: 0;
+}
+.ra-cat-info { flex: 1; }

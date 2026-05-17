@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { RestauranteComponent } from './pages/restaurante/restaurante.component';
 import { KitchenDisplayComponent } from './pages/restaurante/kitchen-display/kitchen-display.component';
 import { PrintersAdminComponent } from './pages/restaurante/printers-admin/printers-admin.component';
+import { RestaurantAdminComponent } from './pages/restaurante/restaurant-admin/restaurant-admin.component';
 import { Inventario } from './pages/inventario/inventario.component';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { ProveedoresComponent } from './pages/inventario/proveedores/proveedores.component';
@@ -297,6 +298,12 @@ export const routes: Routes = [
     {
         path: 'restaurante/impresoras',
         component: PrintersAdminComponent,
+        canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
+        data: { permissions: ['config.general'], modulo: 'restaurante' }
+    },
+    {
+        path: 'restaurante/admin',
+        component: RestaurantAdminComponent,
         canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
         data: { permissions: ['config.general'], modulo: 'restaurante' }
     },

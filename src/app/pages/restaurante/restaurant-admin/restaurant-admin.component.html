@@ -1,0 +1,370 @@
+<div class="ra-page">
+
+  <!-- HEADER -->
+  <div class="ra-header mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="ra-header-icon">
+        <i class="bi bi-gear-fill text-white fs-5"></i>
+      </div>
+      <div>
+        <h4 class="ra-title">Configuración del Restaurante</h4>
+        <p class="ra-subtitle">Zonas, Mesas, Categorías y Platos del Menú</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="ra-tabs mb-4">
+    <button class="ra-tab" [class.active]="tabActiva==='zonas'" (click)="cargarTab('zonas')">
+      <i class="bi bi-map-fill"></i> Zonas
+    </button>
+    <button class="ra-tab" [class.active]="tabActiva==='mesas'" (click)="cargarTab('mesas')">
+      <i class="bi bi-grid-fill"></i> Mesas
+    </button>
+    <button class="ra-tab" [class.active]="tabActiva==='categorias'" (click)="cargarTab('categorias')">
+      <i class="bi bi-tags-fill"></i> Categorías Menú
+    </button>
+    <button class="ra-tab" [class.active]="tabActiva==='platos'" (click)="cargarTab('platos')">
+      <i class="bi bi-egg-fried"></i> Platos
+    </button>
+  </div>
+
+  <!-- SPINNER -->
+  @if (cargando) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" style="width:2rem;height:2rem"></div>
+    </div>
+  }
+
+  <!-- ══════════ TAB: ZONAS ══════════ -->
+  @if (!cargando && tabActiva === 'zonas') {
+    <div class="ra-card">
+      <div class="ra-card-header">
+        <h6 class="ra-section-title"><i class="bi bi-map-fill"></i> Zonas del Restaurante</h6>
+        <button class="ra-btn-add" (click)="abrirFormZona()">
+          <i class="bi bi-plus-lg"></i> Nueva Zona
+        </button>
+      </div>
+
+      <!-- Formulario zona -->
+      @if (mostrarFormZona) {
+        <div class="ra-form mb-3">
+          <h6 class="ra-form-title">{{ editandoZona ? 'Editar' : 'Nueva' }} Zona</h6>
+          <div class="row g-2">
+            <div class="col-md-5">
+              <label class="ra-label">Nombre *</label>
+              <input class="form-control form-control-sm" [(ngModel)]="zonaForm.nombre" placeholder="Salón Principal">
+            </div>
+            <div class="col-md-5">
+              <label class="ra-label">Descripción</label>
+              <input class="form-control form-control-sm" [(ngModel)]="zonaForm.descripcion" placeholder="Opcional">
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Orden</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="zonaForm.orden" min="1">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="ra-btn-save" (click)="guardarZona()">
+              <i class="bi bi-check-lg"></i> Guardar
+            </button>
+            <button class="ra-btn-cancel" (click)="mostrarFormZona=false">Cancelar</button>
+          </div>
+        </div>
+      }
+
+      <!-- Lista zonas -->
+      @if (zonas.length === 0) {
+        <div class="ra-empty">Sin zonas configuradas. Crea la primera zona.</div>
+      } @else {
+        <div class="ra-table-wrap">
+          <table class="ra-table">
+            <thead><tr><th>Nombre</th><th>Descripción</th><th>Orden</th><th>Acciones</th></tr></thead>
+            <tbody>
+              @for (zona of zonas; track trackById($index, zona)) {
+                <tr>
+                  <td class="fw-semibold">{{ zona.nombre }}</td>
+                  <td class="text-muted small">{{ zona.descripcion || '—' }}</td>
+                  <td><span class="ra-badge">{{ zona.orden }}</span></td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <button class="ra-btn-icon edit" (click)="abrirFormZona(zona)" title="Editar">
+                        <i class="bi bi-pencil-fill"></i>
+                      </button>
+                      <button class="ra-btn-icon del" (click)="eliminarZona(zona)" title="Eliminar">
+                        <i class="bi bi-trash-fill"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════════ TAB: MESAS ══════════ -->
+  @if (!cargando && tabActiva === 'mesas') {
+    <div class="ra-card">
+      <div class="ra-card-header">
+        <h6 class="ra-section-title"><i class="bi bi-grid-fill"></i> Mesas</h6>
+        <button class="ra-btn-add" (click)="abrirFormMesa()" [disabled]="zonas.length===0">
+          <i class="bi bi-plus-lg"></i> Nueva Mesa
+        </button>
+      </div>
+
+      @if (zonas.length === 0) {
+        <div class="ra-empty">⚠️ Primero crea al menos una <strong>Zona</strong> en la pestaña anterior.</div>
+      }
+
+      <!-- Formulario mesa -->
+      @if (mostrarFormMesa) {
+        <div class="ra-form mb-3">
+          <h6 class="ra-form-title">{{ editandoMesa ? 'Editar' : 'Nueva' }} Mesa</h6>
+          <div class="row g-2">
+            <div class="col-md-3">
+              <label class="ra-label">Zona *</label>
+              <select class="form-select form-select-sm" [(ngModel)]="mesaForm.zona_id">
+                @for (z of zonas; track z.id) {
+                  <option [value]="z.id">{{ z.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Nº Mesa *</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="mesaForm.numero_mesa" min="1">
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Capacidad</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="mesaForm.capacidad" min="1" max="30">
+            </div>
+            <div class="col-md-5">
+              <label class="ra-label">Nombre/Alias (opcional)</label>
+              <input class="form-control form-control-sm" [(ngModel)]="mesaForm.nombre_mesa" placeholder="Ej: VIP, Ventana…">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="ra-btn-save" (click)="guardarMesa()">
+              <i class="bi bi-check-lg"></i> Guardar
+            </button>
+            <button class="ra-btn-cancel" (click)="mostrarFormMesa=false">Cancelar</button>
+          </div>
+        </div>
+      }
+
+      <!-- Lista mesas agrupadas por zona -->
+      @for (zona of zonas; track zona.id) {
+        <div class="ra-zona-group mb-3">
+          <div class="ra-zona-label">
+            <i class="bi bi-map-fill"></i> {{ zona.nombre }}
+            <span class="ra-badge ms-2">{{ mesasPorZona(zona.id).length }} mesas</span>
+          </div>
+          <div class="ra-mesas-grid">
+            @for (mesa of mesasPorZona(zona.id); track trackById($index, mesa)) {
+              <div class="ra-mesa-chip">
+                <div class="ra-mesa-num">{{ mesa.numero_mesa }}</div>
+                @if (mesa.nombre_mesa) {
+                  <div class="ra-mesa-alias">{{ mesa.nombre_mesa }}</div>
+                }
+                <div class="ra-mesa-cap"><i class="bi bi-people-fill"></i> {{ mesa.capacidad }}</div>
+                <div class="d-flex gap-1 mt-1 justify-content-center">
+                  <button class="ra-btn-icon edit xs" (click)="abrirFormMesa(mesa)" title="Editar">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  <button class="ra-btn-icon del xs" (click)="eliminarMesa(mesa)" title="Eliminar">
+                    <i class="bi bi-trash-fill"></i>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (mesas.length === 0 && zonas.length > 0) {
+        <div class="ra-empty">Sin mesas. Crea la primera mesa con el botón de arriba.</div>
+      }
+    </div>
+  }
+
+  <!-- ══════════ TAB: CATEGORÍAS ══════════ -->
+  @if (!cargando && tabActiva === 'categorias') {
+    <div class="ra-card">
+      <div class="ra-card-header">
+        <h6 class="ra-section-title"><i class="bi bi-tags-fill"></i> Categorías del Menú</h6>
+        <button class="ra-btn-add" (click)="abrirFormCat()">
+          <i class="bi bi-plus-lg"></i> Nueva Categoría
+        </button>
+      </div>
+
+      @if (mostrarFormCat) {
+        <div class="ra-form mb-3">
+          <h6 class="ra-form-title">{{ editandoCat ? 'Editar' : 'Nueva' }} Categoría</h6>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="ra-label">Nombre *</label>
+              <input class="form-control form-control-sm" [(ngModel)]="catForm.nombre" placeholder="Ej: Entradas">
+            </div>
+            <div class="col-md-4">
+              <label class="ra-label">Descripción</label>
+              <input class="form-control form-control-sm" [(ngModel)]="catForm.descripcion" placeholder="Opcional">
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Ícono (emoji)</label>
+              <input class="form-control form-control-sm text-center" [(ngModel)]="catForm.icono" placeholder="🍽️" maxlength="4">
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Orden</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="catForm.orden" min="1">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="ra-btn-save" (click)="guardarCat()">
+              <i class="bi bi-check-lg"></i> Guardar
+            </button>
+            <button class="ra-btn-cancel" (click)="mostrarFormCat=false">Cancelar</button>
+          </div>
+        </div>
+      }
+
+      <div class="ra-cat-grid">
+        @for (cat of categorias; track trackById($index, cat)) {
+          <div class="ra-cat-card">
+            <div class="ra-cat-icon">{{ cat.icono || '🍽️' }}</div>
+            <div class="ra-cat-info">
+              <div class="fw-bold">{{ cat.nombre }}</div>
+              <div class="text-muted small">{{ cat.descripcion || 'Sin descripción' }}</div>
+            </div>
+            <div class="d-flex gap-1">
+              <button class="ra-btn-icon edit" (click)="abrirFormCat(cat)">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="ra-btn-icon del" (click)="eliminarCat(cat)">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </div>
+          </div>
+        }
+        @if (categorias.length === 0) {
+          <div class="ra-empty">Sin categorías. Crea la primera con el botón de arriba.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══════════ TAB: PLATOS ══════════ -->
+  @if (!cargando && tabActiva === 'platos') {
+    <div class="ra-card">
+      <div class="ra-card-header">
+        <h6 class="ra-section-title"><i class="bi bi-egg-fried"></i> Platos del Menú</h6>
+        <div class="d-flex gap-2 align-items-center">
+          <select class="form-select form-select-sm" style="width:180px"
+            [(ngModel)]="categoriaFiltroPlatos" (change)="filtrarPlatos()">
+            <option value="">Todas las categorías</option>
+            @for (cat of categorias; track cat.id) {
+              <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+            }
+          </select>
+          <button class="ra-btn-add" (click)="abrirFormPlato()" [disabled]="categorias.length===0">
+            <i class="bi bi-plus-lg"></i> Nuevo Plato
+          </button>
+        </div>
+      </div>
+
+      @if (categorias.length === 0) {
+        <div class="ra-empty">⚠️ Primero crea <strong>Categorías</strong> en la pestaña anterior.</div>
+      }
+
+      @if (mostrarFormPlato) {
+        <div class="ra-form mb-3">
+          <h6 class="ra-form-title">{{ editandoPlato ? 'Editar' : 'Nuevo' }} Plato</h6>
+          <div class="row g-2">
+            <div class="col-md-3">
+              <label class="ra-label">Categoría *</label>
+              <select class="form-select form-select-sm" [(ngModel)]="platoForm.categoria_id">
+                @for (cat of categorias; track cat.id) {
+                  <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="ra-label">Nombre del plato *</label>
+              <input class="form-control form-control-sm" [(ngModel)]="platoForm.nombre" placeholder="Ej: Pollo a la plancha">
+            </div>
+            <div class="col-md-2">
+              <label class="ra-label">Precio (RD$)</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.precio" min="0">
+            </div>
+            <div class="col-md-3">
+              <label class="ra-label">Tiempo preparación (min)</label>
+              <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.tiempo_preparacion_minutos" min="1">
+            </div>
+            <div class="col-md-6">
+              <label class="ra-label">Descripción</label>
+              <input class="form-control form-control-sm" [(ngModel)]="platoForm.descripcion" placeholder="Ingredientes, acompañantes…">
+            </div>
+            <div class="col-md-6">
+              <label class="ra-label">Notas para cocina</label>
+              <input class="form-control form-control-sm" [(ngModel)]="platoForm.notas_cocina" placeholder="Instrucciones de preparación…">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="ra-btn-save" (click)="guardarPlato()">
+              <i class="bi bi-check-lg"></i> Guardar
+            </button>
+            <button class="ra-btn-cancel" (click)="mostrarFormPlato=false">Cancelar</button>
+          </div>
+        </div>
+      }
+
+      <div class="ra-table-wrap">
+        <table class="ra-table">
+          <thead>
+            <tr>
+              <th>Plato</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Tiempo</th>
+              <th>Notas cocina</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (plato of platos; track trackById($index, plato)) {
+              <tr>
+                <td>
+                  <div class="fw-semibold">{{ plato.nombre }}</div>
+                  @if (plato.descripcion) {
+                    <div class="text-muted small">{{ plato.descripcion }}</div>
+                  }
+                </td>
+                <td>
+                  <span class="ra-cat-pill">{{ plato.categoria?.nombre || '—' }}</span>
+                </td>
+                <td class="fw-bold text-success">RD$ {{ plato.precio | number:'1.0-0' }}</td>
+                <td><i class="bi bi-clock text-muted me-1"></i>{{ plato.tiempo_preparacion_minutos }}m</td>
+                <td class="text-muted small">{{ plato.notas_cocina || '—' }}</td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <button class="ra-btn-icon edit" (click)="abrirFormPlato(plato)" title="Editar">
+                      <i class="bi bi-pencil-fill"></i>
+                    </button>
+                    <button class="ra-btn-icon del" (click)="eliminarPlato(plato)" title="Eliminar">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (platos.length === 0) {
+              <tr><td colspan="6" class="ra-empty">Sin platos registrados.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+</div>

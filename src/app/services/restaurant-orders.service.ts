@@ -354,4 +354,82 @@ export class RestaurantOrdersService {
   limpiarOrdenActual(): void {
     this.ordenActualSubject.next(null);
   }
+
+  // ============================================================
+  // ADMIN MENÚ — Categorías CRUD
+  // ============================================================
+
+  async crearCategoria(data: { nombre: string; descripcion?: string; icono?: string; orden: number }): Promise<MenuCategory> {
+    const { data: res, error } = await this.supabaseService.client
+      .from('menu_categories')
+      .insert({ ...data, negocio_id: this.negocioId, activa: true })
+      .select().single();
+    if (error) throw error;
+    return res;
+  }
+
+  async actualizarCategoria(id: string, cambios: Partial<MenuCategory>): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('menu_categories')
+      .update(cambios)
+      .eq('id', id)
+      .eq('negocio_id', this.negocioId);
+    if (error) throw error;
+  }
+
+  async eliminarCategoria(id: string): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('menu_categories')
+      .update({ activa: false })
+      .eq('id', id)
+      .eq('negocio_id', this.negocioId);
+    if (error) throw error;
+  }
+
+  // ============================================================
+  // ADMIN MENÚ — Ítems CRUD
+  // ============================================================
+
+  async cargarItemsAdmin(categoriaId?: string): Promise<MenuItem[]> {
+    let q = this.supabaseService.client
+      .from('menu_items')
+      .select('*, categoria:menu_categories(id, nombre), modificadores:menu_item_modifiers(*)')
+      .eq('negocio_id', this.negocioId)
+      .eq('activo', true)
+      .order('nombre');
+    if (categoriaId) q = q.eq('categoria_id', categoriaId);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  }
+
+  async crearMenuItem(item: {
+    categoria_id: string; nombre: string; descripcion?: string;
+    precio: number; tiempo_preparacion_minutos: number; notas_cocina?: string;
+  }): Promise<MenuItem> {
+    const { data, error } = await this.supabaseService.client
+      .from('menu_items')
+      .insert({ ...item, negocio_id: this.negocioId, disponible: true, activo: true, requiere_inventario: false })
+      .select().single();
+    if (error) throw error;
+    return data;
+  }
+
+  async actualizarMenuItem(id: string, cambios: Partial<MenuItem>): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('menu_items')
+      .update(cambios)
+      .eq('id', id)
+      .eq('negocio_id', this.negocioId);
+    if (error) throw error;
+  }
+
+  async eliminarMenuItem(id: string): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('menu_items')
+      .update({ activo: false })
+      .eq('id', id)
+      .eq('negocio_id', this.negocioId);
+    if (error) throw error;
+  }
 }
