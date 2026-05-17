@@ -393,7 +393,7 @@ export class RestaurantOrdersService {
   async cargarItemsAdmin(categoriaId?: string): Promise<MenuItem[]> {
     let q = this.supabaseService.client
       .from('menu_items')
-      .select('*, categoria:menu_categories(id, nombre), modificadores:menu_item_modifiers(*)')
+      .select('*')
       .eq('negocio_id', this.negocioId)
       .eq('activo', true)
       .order('nombre');

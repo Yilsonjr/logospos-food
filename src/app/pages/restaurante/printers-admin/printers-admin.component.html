@@ -2,15 +2,16 @@
 
     <!-- Header -->
     <div class="printers-header">
-        <div>
-            <h1 class="printers-title">
-                <span class="printers-title-icon"><i class="fa-solid fa-print"></i></span>
-                Impresoras de Red
-            </h1>
-            <p class="printers-subtitle">Gestiona las impresoras térmicas ESC/POS y el agente de impresión local.</p>
+        <div class="d-flex align-items-center gap-3">
+            <span class="printers-title-icon"><i class="fa-solid fa-print"></i></span>
+            <div>
+                <h1 class="printers-title">Impresoras de Red</h1>
+                <p class="printers-subtitle">Gestiona las impresoras térmicas ESC/POS y el agente de impresión local.</p>
+            </div>
         </div>
         <button class="btn-nueva-impresora" (click)="abrirModalCrear()">
-            <i class="fa-solid fa-plus"></i> Nueva Impresora
+            <span class="btn-plus-circle"><i class="fa-solid fa-plus"></i></span>
+            Nueva Impresora
         </button>
     </div>
 
@@ -59,9 +60,10 @@
     <div *ngIf="!isLoading && impresoras.length === 0" class="printers-empty">
         <div class="printers-empty-icon">🖨️</div>
         <h5 class="mt-3 mb-1 fw-bold">Sin impresoras configuradas</h5>
-        <p class="text-muted mb-3 small">Agrega una impresora térmica de red para imprimir comandas y recibos.</p>
+        <p class="text-muted mb-4 small">Agrega una impresora térmica de red para imprimir comandas y recibos.</p>
         <button class="btn-nueva-impresora" (click)="abrirModalCrear()">
-            <i class="fa-solid fa-plus me-1"></i> Agregar primera impresora
+            <span class="btn-plus-circle"><i class="fa-solid fa-plus"></i></span>
+            Agregar primera impresora
         </button>
     </div>
 

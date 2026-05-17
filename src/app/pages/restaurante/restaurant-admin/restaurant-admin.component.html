@@ -341,7 +341,7 @@
                   }
                 </td>
                 <td>
-                  <span class="ra-cat-pill">{{ plato.categoria?.nombre || '—' }}</span>
+                  <span class="ra-cat-pill">{{ nombreCategoria(plato.categoria_id) }}</span>
                 </td>
                 <td class="fw-bold text-success">RD$ {{ plato.precio | number:'1.0-0' }}</td>
                 <td><i class="bi bi-clock text-muted me-1"></i>{{ plato.tiempo_preparacion_minutos }}m</td>

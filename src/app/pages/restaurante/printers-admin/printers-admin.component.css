@@ -14,13 +14,10 @@
     margin-bottom: 1.75rem;
 }
 .printers-title {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 800;
     color: #0f172a;
-    margin: 0 0 4px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    margin: 0 0 2px;
 }
 .printers-title-icon {
     width: 44px; height: 44px;
@@ -37,18 +34,32 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 9px 22px;
-    background: #0f172a;
+    padding: 10px 22px;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
     color: #fff;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: background .15s, transform .12s;
+    transition: box-shadow .18s, transform .12s;
     white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(99,102,241,.35);
+    letter-spacing: .01em;
 }
-.btn-nueva-impresora:hover { background: #1e293b; transform: translateY(-1px); }
+.btn-nueva-impresora:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(99,102,241,.45);
+}
+.btn-nueva-impresora:active { transform: translateY(0); box-shadow: 0 3px 10px rgba(99,102,241,.3); }
+.btn-plus-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+}
 
 /* ── Agent card ───────────────────────────────────── */
 .agent-card {
@@ -123,11 +134,24 @@
 .agent-hint code { color: #94a3b8; background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 4px; }
 
 /* ── Loading / Empty ──────────────────────────────── */
-.printers-loading, .printers-empty {
+.printers-loading {
     text-align: center;
     padding: 4rem 1rem;
 }
+.printers-empty {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+    background: #fff;
+    border-radius: 20px;
+    border: 2px dashed #e0e7ff;
+    box-shadow: 0 1px 6px rgba(0,0,0,.04);
+}
 .printers-empty-icon { font-size: 3.5rem; }
+.printers-empty h5 { color: #1e293b; }
+.printers-empty .btn-nueva-impresora {
+    display: inline-flex;
+    margin: 0 auto;
+}
 
 /* ── Grid ─────────────────────────────────────────── */
 .printers-grid {

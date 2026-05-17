@@ -77,7 +77,8 @@ export class RestaurantAdminComponent implements OnInit {
         this.platos = await this.ordersService.cargarItemsAdmin(this.categoriaFiltroPlatos || undefined);
       }
     } catch (e: any) {
-      Swal.fire('Error', e.message, 'error');
+      console.error('[RestaurantAdmin] Error cargando tab', tab, e);
+      Swal.fire('Error', e.message || 'Error al cargar datos', 'error');
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
@@ -281,6 +282,10 @@ export class RestaurantAdminComponent implements OnInit {
 
   nombreZona(zonaId: string): string {
     return this.zonas.find(z => z.id === zonaId)?.nombre || '—';
+  }
+
+  nombreCategoria(catId: string): string {
+    return this.categorias.find(c => c.id === catId)?.nombre || '—';
   }
 
   mesasPorZona(zonaId: string): RestaurantTable[] {
