@@ -1,0 +1,76 @@
+=====================================================
+  LogosPOS — Agente de Impresion
+  Instrucciones de instalacion
+=====================================================
+
+REQUISITOS PREVIOS
+------------------
+Antes de instalar, asegurate de tener:
+
+  1. Node.js instalado en esta computadora
+     Descarga: https://nodejs.org  (version 18 o superior)
+     Si ya lo tienes instalado, puedes saltarte este paso.
+
+  2. Esta carpeta copiada en la computadora que usara
+     como servidor de impresion (la que esta conectada
+     a la misma red que las impresoras).
+
+
+INSTALACION (una sola vez)
+--------------------------
+  1. Haz clic derecho en:  instalar-servicio.bat
+  2. Selecciona "Ejecutar como administrador"
+  3. Espera a que termine (puede tomar 1-2 minutos)
+  4. Cuando diga "Instalacion completada", cierra la ventana.
+
+Listo. El agente de impresion:
+  - Esta activo ahora mismo
+  - Se iniciara automaticamente cada vez que enciendas la PC
+  - No necesita que abras ninguna ventana ni programa
+
+
+VERIFICAR QUE FUNCIONA
+-----------------------
+Abre el navegador en esta misma computadora y ve a:
+
+  http://localhost:3000/health
+
+Deberia mostrar:  {"status":"ok","agent":"LogosPOS Print Agent",...}
+
+Si eso aparece, todo esta funcionando correctamente.
+
+
+CONFIGURAR EN LogosPOS
+-----------------------
+En la app LogosPOS, ve a:
+  Configuracion > Impresoras de Red
+
+En el campo "Agente de Impresion Local", escribe la IP
+de ESTA computadora seguida de :3000
+
+Ejemplo: si la IP de esta PC es 192.168.1.50, escribe:
+  http://192.168.1.50:3000
+
+Para saber la IP de esta PC:
+  1. Presiona  Windows + R
+  2. Escribe   cmd   y presiona Enter
+  3. Escribe   ipconfig   y presiona Enter
+  4. Busca "Direccion IPv4" (algo como 192.168.X.X)
+
+
+DESINSTALAR
+-----------
+Si necesitas desinstalar el agente:
+  1. Haz clic derecho en:  desinstalar-servicio.bat
+  2. Selecciona "Ejecutar como administrador"
+
+
+SOPORTE
+-------
+Si tienes algun problema, contacta al soporte de LogosPOS.
+
+Logs del agente (para soporte tecnico):
+  logs\agent.log
+  logs\agent-error.log
+
+=====================================================

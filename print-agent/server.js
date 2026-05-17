@@ -2,14 +2,12 @@
  * LogosPOS — Print Agent
  * Agente de impresión local para impresoras térmicas de red (ESC/POS sobre TCP).
  *
- * Instalación:
+ * Instalación como servicio Windows (recomendado):
+ *   Ejecutar instalar-servicio.bat como Administrador
+ *
+ * Ejecución manual (desarrollo):
  *   npm install
  *   node server.js
- *
- * Uso en producción (Windows):
- *   npm install -g pm2
- *   pm2 start server.js --name logos-print-agent
- *   pm2 startup && pm2 save
  */
 
 const http = require('http');
