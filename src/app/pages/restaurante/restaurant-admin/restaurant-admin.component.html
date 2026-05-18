@@ -36,6 +36,9 @@
         <span class="badge bg-danger ms-1">!</span>
       }
     </button>
+    <button class="ra-tab" [class.active]="tabActiva==='ordenes'" (click)="cargarTab('ordenes')">
+      <i class="bi bi-clock-history"></i> Historial de Órdenes
+    </button>
   </div>
 
   <!-- SPINNER -->
@@ -329,13 +332,90 @@
               <div class="col-md-3 d-flex align-items-end pb-1">
                 <div class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox" id="chkInventario"
-                    [(ngModel)]="platoForm.requiere_inventario">
+                    [(ngModel)]="platoForm.requiere_inventario"
+                    (ngModelChange)="onToggleRequiereInventario()">
                   <label class="form-check-label ra-label mb-0" for="chkInventario">Rebaja inventario</label>
                 </div>
               </div>
             }
           </div>
-          <div class="d-flex gap-2 mt-2">
+
+          <!-- Panel de receta / ingredientes -->
+          @if (usaInventario && platoForm.requiere_inventario) {
+            <div class="ra-receta-panel mt-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-journal-text text-primary"></i>
+                <span class="fw-bold small">Ingredientes de la receta</span>
+              </div>
+              @if (!editandoPlato) {
+                <p class="text-muted small mb-0">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Guarda el plato primero, luego podrás asignar ingredientes.
+                </p>
+              } @else {
+                <!-- Lista de ingredientes actuales -->
+                @if (receta.length > 0) {
+                  <table class="table table-sm table-bordered mb-2">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Insumo</th>
+                        <th class="text-center" style="width:90px">Cantidad</th>
+                        <th style="width:90px">Unidad</th>
+                        <th style="width:40px"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (ing of receta; track $index) {
+                        <tr>
+                          <td>{{ ing._nombre || nombreInsumo(ing.inventory_item_id) }}</td>
+                          <td class="text-center">{{ ing.cantidad_requerida }}</td>
+                          <td class="text-muted small">{{ ing.unidad_medida }}</td>
+                          <td class="text-center">
+                            <button class="btn btn-sm p-0 text-danger" (click)="quitarIngredienteReceta($index)">
+                              <i class="bi bi-trash3"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <p class="text-muted small">Sin ingredientes asignados aún.</p>
+                }
+
+                <!-- Agregar nuevo ingrediente -->
+                <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
+                  <div style="flex:2;min-width:150px">
+                    <label class="ra-label">Insumo</label>
+                    <select class="form-select form-select-sm" [(ngModel)]="recetaItemForm.inventory_item_id">
+                      <option value="">— Seleccionar insumo —</option>
+                      @for (inv of inventarioItems; track inv.id) {
+                        <option [value]="inv.id">{{ inv.nombre }} ({{ inv.unidad_medida }})</option>
+                      }
+                    </select>
+                  </div>
+                  <div style="flex:1;min-width:80px">
+                    <label class="ra-label">Cantidad</label>
+                    <input type="number" class="form-control form-control-sm"
+                      min="0.001" step="0.001"
+                      [(ngModel)]="recetaItemForm.cantidad_requerida">
+                  </div>
+                  <button class="btn btn-outline-primary btn-sm" (click)="agregarIngredienteReceta()">
+                    <i class="bi bi-plus-circle"></i> Agregar
+                  </button>
+                </div>
+
+                <button class="btn btn-primary btn-sm" (click)="guardarRecetaPlato()" [disabled]="guardandoReceta">
+                  @if (guardandoReceta) {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                  }
+                  <i class="bi bi-save"></i> Guardar receta
+                </button>
+              }
+            </div>
+          }
+
+          <div class="d-flex gap-2 mt-3">
             <button class="ra-btn-save" (click)="guardarPlato()">
               <i class="bi bi-check-lg"></i> Guardar
             </button>
@@ -635,6 +715,192 @@
               @if (cargando) { <span class="spinner-border spinner-border-sm me-1"></span> }
               <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrada
             </button>
+          </div>
+        </div>
+      </div>
+      }
+  }
+
+  <!-- ══════════ TAB: HISTORIAL DE ÓRDENES ══════════ -->
+  @if (!cargando && tabActiva === 'ordenes') {
+    <div class="ra-card">
+      <div class="ra-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <h6 class="ra-section-title mb-0"><i class="bi bi-clock-history text-primary"></i> Historial de Órdenes y Facturado</h6>
+        
+        <!-- Filtros de búsqueda -->
+        <div class="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0" style="min-width: 320px;">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Buscar ID de orden o mesa..." [(ngModel)]="busquedaOrden">
+          </div>
+          
+          <select class="form-select form-select-sm" style="max-width: 140px;" [(ngModel)]="filtroEstadoOrden">
+            <option value="">Todos los estados</option>
+            <option value="cerrada">Cerradas</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
+        </div>
+      </div>
+
+      @if (ordenesFiltradas.length === 0) {
+        <div class="ra-empty py-5 text-center text-muted">
+          <i class="bi bi-receipt-cutoff display-4 d-block mb-3 text-secondary opacity-50"></i>
+          <span>No se encontraron órdenes registradas en este período.</span>
+        </div>
+      } @else {
+        <div class="ra-table-wrap">
+          <table class="ra-table">
+            <thead>
+              <tr>
+                <th>Código de Orden</th>
+                <th>Mesa</th>
+                <th>Fecha y Hora</th>
+                <th>Estado</th>
+                <th class="text-end">Subtotal</th>
+                <th class="text-end">ITBIS</th>
+                <th class="text-end">Total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (orden of ordenesFiltradas; track trackById($index, orden)) {
+                <tr class="align-middle">
+                  <td class="font-monospace text-secondary small fw-bold">#{{ orden.id.substring(0, 8) }}</td>
+                  <td>
+                    <span class="badge bg-secondary-subtle text-secondary px-2 py-1 fw-bold fs-7">
+                      <i class="bi bi-hash"></i> Mesa {{ orden.mesa?.numero_mesa || 'N/A' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-dark small d-block">{{ formatearFecha(orden.hora_cierre || orden.updated_at) }}</span>
+                  </td>
+                  <td>
+                    <span class="badge rounded-pill px-2.5 py-1 text-capitalize fs-7.5"
+                      [class.bg-success-subtle]="orden.estado === 'cerrada'"
+                      [class.text-success]="orden.estado === 'cerrada'"
+                      [class.bg-danger-subtle]="orden.estado === 'cancelada'"
+                      [class.text-danger]="orden.estado === 'cancelada'">
+                      {{ orden.estado }}
+                    </span>
+                  </td>
+                  <td class="text-end text-muted font-monospace">{{ formatearMoneda(orden.subtotal) }}</td>
+                  <td class="text-end text-muted font-monospace">{{ formatearMoneda(orden.impuestos) }}</td>
+                  <td class="text-end fw-bold text-success font-monospace">{{ formatearMoneda(orden.total) }}</td>
+                  <td>
+                    <button class="btn btn-xs btn-outline-primary shadow-sm" (click)="verDetalleOrden(orden.id)" title="Ver Detalle Completo">
+                      <i class="bi bi-eye-fill"></i> Detalle
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- MODAL DETALLE DE ORDEN -->
+    @if (ordenSeleccionada) {
+      <div class="ra-modal-overlay">
+        <div class="ra-modal" style="max-width: 600px;">
+          <div class="ra-modal-header d-flex align-items-center justify-content-between bg-dark text-white p-3">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Detalle de Orden #{{ ordenSeleccionada.id.substring(0, 8) }}</h6>
+            <button class="btn-close btn-close-white" (click)="ordenSeleccionada = null"></button>
+          </div>
+          <div class="ra-modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
+            <!-- Encabezado de orden -->
+            <div class="row mb-4 border-bottom pb-3 g-2">
+              <div class="col-6">
+                <span class="text-muted d-block small">Mesa:</span>
+                <span class="fw-bold text-dark"><i class="bi bi-hash"></i> Mesa {{ ordenSeleccionada.mesa?.numero_mesa || 'N/A' }}</span>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block small">Estado:</span>
+                <span class="badge text-capitalize fs-7"
+                  [class.bg-success]="ordenSeleccionada.estado === 'cerrada'"
+                  [class.bg-danger]="ordenSeleccionada.estado === 'cancelada'">
+                  {{ ordenSeleccionada.estado }}
+                </span>
+              </div>
+              <div class="col-6 mt-2">
+                <span class="text-muted d-block small">Hora Apertura:</span>
+                <span class="text-dark small">{{ formatearFecha(ordenSeleccionada.created_at) }}</span>
+              </div>
+              <div class="col-6 mt-2">
+                <span class="text-muted d-block small">Hora Cierre / Anulación:</span>
+                <span class="text-dark small">{{ formatearFecha(ordenSeleccionada.hora_cierre || ordenSeleccionada.updated_at) }}</span>
+              </div>
+            </div>
+
+            <!-- Items de la orden -->
+            <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="bi bi-egg-fried me-1"></i> Artículos Servidos</h6>
+            <div class="list-group list-group-flush mb-4">
+              @for (item of ordenSeleccionada.items; track item.id) {
+                <div class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-center">
+                  <div>
+                    <span class="fw-bold text-dark">{{ item.cantidad }}x</span>
+                    <span class="ms-2 text-dark">{{ item.menu_item?.nombre || 'Plato' }}</span>
+                    @if (item.modificadores?.length > 0) {
+                      <div class="small text-muted ms-4">
+                        @for (mod of item.modificadores; track $index) {
+                          <span class="badge bg-light text-secondary me-1">+ {{ mod.nombre }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <span class="font-monospace text-dark fw-semibold">{{ formatearMoneda(item.subtotal) }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Desglose de totales -->
+            <div class="bg-light p-3 rounded shadow-inner mb-4">
+              <div class="d-flex justify-content-between mb-1.5 small text-muted">
+                <span>Subtotal:</span>
+                <span class="font-monospace">{{ formatearMoneda(ordenSeleccionada.subtotal) }}</span>
+              </div>
+              @if (ordenSeleccionada.descuento > 0) {
+                <div class="d-flex justify-content-between mb-1.5 small text-danger">
+                  <span>Descuento:</span>
+                  <span class="font-monospace">- {{ formatearMoneda(ordenSeleccionada.descuento) }}</span>
+                </div>
+              }
+              <div class="d-flex justify-content-between mb-1.5 small text-muted">
+                <span>ITBIS / Impuestos:</span>
+                <span class="font-monospace">{{ formatearMoneda(ordenSeleccionada.impuestos) }}</span>
+              </div>
+              @if (ordenSeleccionada.propina > 0) {
+                <div class="d-flex justify-content-between mb-1.5 small text-muted">
+                  <span>Propina Legal (10%):</span>
+                  <span class="font-monospace">{{ formatearMoneda(ordenSeleccionada.propina) }}</span>
+                </div>
+              }
+              <div class="d-flex justify-content-between border-top pt-2 mt-2 fw-bold text-success fs-5">
+                <span>TOTAL:</span>
+                <span class="font-monospace">{{ formatearMoneda(ordenSeleccionada.total) }}</span>
+              </div>
+            </div>
+
+            <!-- Información del pago -->
+            @if (ordenSeleccionada.pagos?.length > 0) {
+              <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="bi bi-credit-card me-1"></i> Detalles de Pago</h6>
+              <div class="list-group list-group-flush">
+                @for (pago of ordenSeleccionada.pagos; track pago.id) {
+                  <div class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="badge text-capitalize bg-info-subtle text-info px-2 py-1 me-2">{{ pago.metodo_pago }}</span>
+                      @if (pago.referencia) {
+                        <span class="small text-muted font-monospace">Ref: {{ pago.referencia }}</span>
+                      }
+                    </div>
+                    <span class="font-monospace fw-bold text-dark">{{ formatearMoneda(pago.monto) }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          <div class="ra-modal-footer bg-light p-3 d-flex justify-content-end">
+            <button class="btn btn-sm btn-secondary" (click)="ordenSeleccionada = null">Cerrar Detalle</button>
           </div>
         </div>
       </div>

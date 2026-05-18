@@ -7,9 +7,9 @@ import { InventoryRestaurantService } from '../../../services/inventory-restaura
 import { SupabaseService } from '../../../services/supabase.service';
 import { CajaService } from '../../../services/caja.service';
 import { AuthService } from '../../../services/auth.service';
+import { PrintService } from '../../../services/print.service';
 import {
-  OrderWithItems, OrderItemWithMenuItem, CuentaComensal,
-  FormaPago, RestaurantOrderPayment
+  OrderWithItems, OrderItemWithMenuItem, CuentaComensal, FormaPago
 } from '../../../models/restaurant.models';
 import Swal from 'sweetalert2';
 
@@ -38,6 +38,7 @@ export class BillSplitComponent implements OnInit {
   cargando = true;
   procesando = false;
   tasaItbis = 0.18;
+  negocioNombre = '';
 
   readonly formasPago: FormaPago[] = ['efectivo', 'tarjeta', 'transferencia', 'cheque', 'mixto'];
 
@@ -48,6 +49,7 @@ export class BillSplitComponent implements OnInit {
     private supabaseService: SupabaseService,
     private cajaService: CajaService,
     private authService: AuthService,
+    private printService: PrintService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -56,6 +58,7 @@ export class BillSplitComponent implements OnInit {
       this.cargando = true;
       const negocio = await this.negociosService.cargarNegocio();
       this.tasaItbis = negocio?.tasa_itbis ?? 0.18;
+      this.negocioNombre = negocio?.nombre || '';
       this.orden = await this.ordersService.obtenerOrdenPorId(this.orderId);
       if (this.orden) this.inicializarCuentaSimple();
     } catch (e: any) {
@@ -241,6 +244,19 @@ export class BillSplitComponent implements OnInit {
           console.error('[BillSplit] Error descontando inventario:', invErr);
         }
         await this.ordersService.cerrarOrden(this.orden.id);
+
+        // Imprimir recibo — silencioso si no hay impresora/agente configurado
+        try {
+          await this.printService.imprimirReciboRestaurant({
+            orden: this.orden,
+            propina: this.propinaGlobal,
+            formaPago: cuenta.forma_pago,
+            negocioNombre: this.negocioNombre
+          });
+        } catch (printErr) {
+          console.warn('[BillSplit] Ticket no impreso:', printErr);
+        }
+
         Swal.fire({
           icon: 'success',
           title: '¡Orden pagada!',

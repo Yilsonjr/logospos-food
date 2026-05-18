@@ -8,11 +8,12 @@ import { InventoryRestaurantService } from '../../../services/inventory-restaura
 import { NegociosService } from '../../../services/negocios.service';
 import {
   RestaurantZone, RestaurantTable, MenuCategory, MenuItem,
-  RestaurantInventoryItem, RestaurantInventoryMovement, TipoMovimientoInventario
+  RestaurantInventoryItem, RestaurantInventoryMovement, TipoMovimientoInventario,
+  MenuItemRecipe
 } from '../../../models/restaurant.models';
 import Swal from 'sweetalert2';
 
-type Tab = 'zonas' | 'mesas' | 'categorias' | 'platos' | 'inventario';
+type Tab = 'zonas' | 'mesas' | 'categorias' | 'platos' | 'inventario' | 'ordenes';
 
 @Component({
   selector: 'app-restaurant-admin',
@@ -57,6 +58,12 @@ export class RestaurantAdminComponent implements OnInit {
   mostrarFormPlato = false;
   categoriaFiltroPlatos = '';
 
+  // Receta del plato seleccionado
+  receta: Array<{ inventory_item_id: string; cantidad_requerida: number; unidad_medida: string; _nombre?: string }> = [];
+  recetaItemForm: { inventory_item_id: string; cantidad_requerida: number; unidad_medida: string } =
+    { inventory_item_id: '', cantidad_requerida: 1, unidad_medida: 'unidad' };
+  guardandoReceta = false;
+
   // ── Inventario ────────────────────────────────────────────
   inventarioItems: RestaurantInventoryItem[] = [];
   movimientos: RestaurantInventoryMovement[] = [];
@@ -67,6 +74,12 @@ export class RestaurantAdminComponent implements OnInit {
   entradaForm: { inventory_item_id: string; cantidad: number; razon: string } =
     { inventory_item_id: '', cantidad: 0, razon: '' };
   invSubTab: 'items' | 'movimientos' = 'items';
+
+  // ── Órdenes / Historial ──────────────────────────────────
+  historialOrdenes: any[] = [];
+  ordenSeleccionada: any = null;
+  busquedaOrden = '';
+  filtroEstadoOrden = '';
 
   readonly unidades = ['unidad', 'kg', 'g', 'litro', 'ml', 'botella', 'caja', 'docena', 'porción'];
 
@@ -105,12 +118,18 @@ export class RestaurantAdminComponent implements OnInit {
       }
       if (tab === 'platos') {
         this.platos = await this.ordersService.cargarItemsAdmin(this.categoriaFiltroPlatos || undefined);
+        if (this.usaInventario) {
+          this.inventarioItems = await this.inventoryService.cargarInventario();
+        }
       }
       if (tab === 'inventario') {
         this.inventarioItems = await this.inventoryService.cargarInventario();
         if (this.invSubTab === 'movimientos') {
           this.movimientos = await this.inventoryService.obtenerHistorialMovimientos(undefined, 80);
         }
+      }
+      if (tab === 'ordenes') {
+        this.historialOrdenes = await this.ordersService.obtenerHistorial(100);
       }
     } catch (e: any) {
       console.error('[RestaurantAdmin] Error cargando tab', tab, e);
@@ -269,6 +288,8 @@ export class RestaurantAdminComponent implements OnInit {
 
   abrirFormPlato(plato?: MenuItem): void {
     this.editandoPlato = plato || null;
+    this.receta = [];
+    this.recetaItemForm = { inventory_item_id: '', cantidad_requerida: 1, unidad_medida: 'unidad' };
     this.platoForm = plato
       ? { categoria_id: plato.categoria_id, nombre: plato.nombre, descripcion: plato.descripcion || '',
           precio: plato.precio, tiempo_preparacion_minutos: plato.tiempo_preparacion_minutos,
@@ -279,6 +300,9 @@ export class RestaurantAdminComponent implements OnInit {
           precio: 0, tiempo_preparacion_minutos: 15, notas_cocina: '',
           requiere_inventario: false, disponible: true };
     this.mostrarFormPlato = true;
+    if (plato?.requiere_inventario && this.usaInventario) {
+      this.cargarReceta(plato.id);
+    }
   }
 
   async guardarPlato(): Promise<void> {
@@ -317,6 +341,67 @@ export class RestaurantAdminComponent implements OnInit {
   async filtrarPlatos(): Promise<void> {
     this.platos = await this.ordersService.cargarItemsAdmin(this.categoriaFiltroPlatos || undefined);
     this.cdr.detectChanges();
+  }
+
+  async cargarReceta(menuItemId: string): Promise<void> {
+    try {
+      const data = await this.inventoryService.obtenerRecetaDeItem(menuItemId);
+      this.receta = data.map(r => ({
+        inventory_item_id: r.inventory_item_id,
+        cantidad_requerida: r.cantidad_requerida,
+        unidad_medida: r.unidad_medida,
+        _nombre: (r as any).item_inventario?.nombre || ''
+      }));
+      this.cdr.detectChanges();
+    } catch (e: any) {
+      console.error('[RestaurantAdmin] Error cargando receta:', e);
+    }
+  }
+
+  onToggleRequiereInventario(): void {
+    if (this.platoForm.requiere_inventario && this.editandoPlato && this.usaInventario) {
+      this.cargarReceta(this.editandoPlato.id);
+    } else {
+      this.receta = [];
+    }
+  }
+
+  agregarIngredienteReceta(): void {
+    if (!this.recetaItemForm.inventory_item_id || this.recetaItemForm.cantidad_requerida <= 0) return;
+    const inv = this.inventarioItems.find(i => i.id === this.recetaItemForm.inventory_item_id);
+    this.receta.push({
+      inventory_item_id: this.recetaItemForm.inventory_item_id,
+      cantidad_requerida: this.recetaItemForm.cantidad_requerida,
+      unidad_medida: inv?.unidad_medida || this.recetaItemForm.unidad_medida,
+      _nombre: inv?.nombre || ''
+    });
+    this.recetaItemForm = { inventory_item_id: '', cantidad_requerida: 1, unidad_medida: 'unidad' };
+  }
+
+  quitarIngredienteReceta(index: number): void {
+    this.receta.splice(index, 1);
+  }
+
+  async guardarRecetaPlato(): Promise<void> {
+    if (!this.editandoPlato) return;
+    this.guardandoReceta = true;
+    try {
+      await this.inventoryService.guardarReceta(
+        this.editandoPlato.id,
+        this.receta.map(r => ({
+          menu_item_id: this.editandoPlato!.id,
+          inventory_item_id: r.inventory_item_id,
+          cantidad_requerida: r.cantidad_requerida,
+          unidad_medida: r.unidad_medida
+        }))
+      );
+      Swal.fire({ icon: 'success', title: 'Receta guardada', timer: 1500, showConfirmButton: false });
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    } finally {
+      this.guardandoReceta = false;
+      this.cdr.detectChanges();
+    }
   }
 
   // ── INVENTARIO ────────────────────────────────────────────
@@ -438,6 +523,54 @@ export class RestaurantAdminComponent implements OnInit {
 
   mesasPorZona(zonaId: string): RestaurantTable[] {
     return this.mesas.filter(m => m.zona_id === zonaId);
+  }
+
+  async verDetalleOrden(orderId: string): Promise<void> {
+    this.cargando = true;
+    try {
+      this.ordenSeleccionada = await this.ordersService.obtenerOrdenPorId(orderId);
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    } finally {
+      this.cargando = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  get ordenesFiltradas(): any[] {
+    const q = this.busquedaOrden.trim().toLowerCase();
+    const st = this.filtroEstadoOrden;
+
+    return this.historialOrdenes.filter(o => {
+      // Filtro por estado
+      if (st && o.estado !== st) return false;
+
+      // Filtro por búsqueda
+      if (q) {
+        const idMatches = o.id.toLowerCase().includes(q);
+        const mesaMatches = `mesa ${o.mesa?.numero_mesa || ''}`.toLowerCase().includes(q) ||
+                            String(o.mesa?.numero_mesa || '').includes(q);
+        return idMatches || mesaMatches;
+      }
+
+      return true;
+    });
+  }
+
+  formatearFecha(fecha: string): string {
+    if (!fecha) return '—';
+    const date = new Date(fecha);
+    return new Intl.DateTimeFormat('es-DO', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  }
+
+  formatearMoneda(valor: number): string {
+    return new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(valor || 0);
   }
 
   trackById(_: number, item: any): string { return item.id; }

@@ -197,6 +197,39 @@ export class PrintService {
     await this.enviarAlAgente(url, printer.ip, printer.puerto, bytes, printer.copies);
   }
 
+  /**
+   * Imprime el recibo completo de una orden de restaurante al cerrar el cobro.
+   * Busca automáticamente la impresora de tipo 'caja' activa.
+   * Si no hay agente o impresora configurada, omite silenciosamente.
+   */
+  async imprimirReciboRestaurant(params: {
+    orden: {
+      id: string;
+      mesa?: { numero_mesa: number } | null;
+      items?: any[];
+      subtotal: number;
+      impuesto: number;
+      total: number;
+    };
+    propina: number;
+    formaPago: string;
+    negocioNombre: string;
+  }): Promise<void> {
+    const url = this.agentUrl;
+    if (!url) return;
+
+    let impresoras: RestaurantPrinter[] = [];
+    try {
+      impresoras = await this.cargarImpresoras();
+    } catch { return; }
+
+    const cajaP = impresoras.find(p => p.tipo === 'caja' && p.activa);
+    if (!cajaP) return;
+
+    const bytes = this.generarReciboRestaurant(cajaP, params);
+    await this.enviarAlAgente(url, cajaP.ip, cajaP.puerto, bytes, cajaP.copies);
+  }
+
   // ============================================================
   // Generación ESC/POS — Comanda de cocina/barra
   // ============================================================
@@ -272,7 +305,95 @@ export class PrintService {
   }
 
   // ============================================================
-  // Generación ESC/POS — Recibo de caja
+  // Generación ESC/POS — Recibo completo de restaurante
+  // ============================================================
+
+  private generarReciboRestaurant(
+    printer: RestaurantPrinter,
+    params: {
+      orden: { id: string; mesa?: { numero_mesa: number } | null; items?: any[]; subtotal: number; impuesto: number; total: number };
+      propina: number;
+      formaPago: string;
+      negocioNombre: string;
+    }
+  ): number[] {
+    const { orden, propina, formaPago, negocioNombre } = params;
+    const chars = printer.caracteres_por_linea || 42;
+    const buf: number[] = [];
+
+    const push  = (...bytes: number[]) => buf.push(...bytes);
+    const texto = (str: string)        => buf.push(...this.encodeText(str));
+    const linea = (str = '')           => { texto(str); push(LF); };
+    const sep   = (c = '-')            => linea(c.repeat(chars));
+    const col2  = (izq: string, der: string) => {
+      const espacio = chars - izq.length - der.length;
+      linea(izq + ' '.repeat(Math.max(1, espacio)) + der);
+    };
+    const fmt   = (n: number) => `RD$ ${n.toFixed(2)}`;
+
+    // Cabecera
+    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON, ...FONT_DOUBLE);
+    linea(negocioNombre.substring(0, 20));
+    push(...FONT_NORMAL, ...BOLD_OFF);
+    sep('=');
+
+    // Info orden
+    push(...ALIGN_LEFT);
+    const mesaLabel = orden.mesa?.numero_mesa ? `Mesa ${orden.mesa.numero_mesa}` : 'Orden';
+    const ordenId   = `#${orden.id.slice(-6).toUpperCase()}`;
+    col2(mesaLabel, ordenId);
+    const ahora = new Date().toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+    linea(ahora);
+    sep();
+
+    // Ítems
+    const items = (orden.items || []).filter((i: any) => i.estado !== 'cancelado');
+    for (const item of items) {
+      const nombre = item.menu_item?.nombre || 'Item';
+      const precio = fmt(item.subtotal);
+      const izqLen = chars - precio.length - 1;
+      const izq    = `${item.cantidad}x ${nombre}`.substring(0, izqLen);
+      col2(izq.padEnd(izqLen), precio);
+
+      if (item.modificadores_seleccionados?.length) {
+        for (const mod of item.modificadores_seleccionados) {
+          linea(`  + ${mod.nombre}`);
+        }
+      }
+      if (item.notas_especiales) {
+        linea(`  * ${item.notas_especiales}`);
+      }
+    }
+
+    sep();
+
+    // Totales
+    col2('Subtotal:', fmt(orden.subtotal));
+    if (orden.impuesto > 0) col2('ITBIS:', fmt(orden.impuesto));
+    if (propina > 0)        col2('Propina:', fmt(propina));
+    sep();
+    push(...BOLD_ON);
+    col2('TOTAL:', fmt(orden.total + propina));
+    push(...BOLD_OFF);
+
+    const pagoMap: Record<string, string> = {
+      efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia',
+      cheque: 'Cheque', mixto: 'Efectivo + Tarjeta'
+    };
+    linea(`Pago: ${pagoMap[formaPago] ?? formaPago}`);
+    sep('=');
+
+    // Pie
+    push(...ALIGN_CENTER);
+    linea('Gracias por su visita!');
+    push(LF, LF);
+
+    if (printer.corte_automatico) push(...CUT_FULL);
+    return buf;
+  }
+
+  // ============================================================
+  // Generación ESC/POS — Recibo de caja (simple, POS)
   // ============================================================
 
   private generarRecibo(
