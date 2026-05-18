@@ -5,8 +5,7 @@
  * Instalación como servicio Windows (recomendado):
  *   Ejecutar instalar-servicio.bat como Administrador
  *
- * Ejecución manual (desarrollo):
- *   npm install
+ * Ejecución manual:
  *   node server.js
  */
 
