@@ -145,16 +145,21 @@ function pingPrinter(ip, puerto) {
 }
 
 // ============================================================
-// Servidor HTTP
+// Request handler compartido entre HTTP y HTTPS
 // ============================================================
 
-const server = http.createServer(async (req, res) => {
+async function requestHandler(req, res) {
   const origin = req.headers.origin || '';
   setCors(res, origin);
 
-  // Pre-flight CORS
+  // Pre-flight CORS + Private Network Access (Chrome 130+)
   if (req.method === 'OPTIONS') {
-    res.writeHead(204);
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin':          origin || '*',
+      'Access-Control-Allow-Methods':         'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers':         'Content-Type',
+      'Access-Control-Allow-Private-Network': 'true',
+    });
     res.end();
     return;
   }
@@ -232,7 +237,10 @@ const server = http.createServer(async (req, res) => {
   }
 
   json(res, 404, { error: 'Ruta no encontrada' });
-});
+}
+
+// ── Servidores HTTP y HTTPS usando el mismo handler ───────────
+const server = http.createServer(requestHandler);
 
 function printBanner(protocol, port, isAlt) {
   console.log(`\n🖨️  LogosPOS Print Agent — ${protocol.toUpperCase()} en ${protocol}://0.0.0.0:${port}`);
@@ -279,7 +287,7 @@ if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) {
       cert: fs.readFileSync(CERT_FILE),
       key:  fs.readFileSync(KEY_FILE)
     };
-    const httpsServer = https.createServer(tlsOptions, server._events.request);
+    const httpsServer = https.createServer(tlsOptions, requestHandler);
     httpsServer.listen(Number(HTTPS_PORT), '0.0.0.0', () => {
       printBanner('https', Number(HTTPS_PORT), false);
       console.log(`   ✅ Usa https://localhost:${HTTPS_PORT} en la app para evitar Mixed Content\n`);

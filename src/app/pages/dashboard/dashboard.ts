@@ -84,22 +84,43 @@ export class Dashboard implements OnInit, OnDestroy {
     this.moduloSubscriptions = [];
   }
 
+  private negocioResuelto = false;
+
   async ngOnInit() {
     console.log('🔄 Iniciando dashboard modular...');
     this.isLoading = true;
 
+    // Disparar carga del negocio si aún no está en memoria
+    if (!this.negociosService.modulosActivos.length) {
+      this.negociosService.cargarNegocio().catch(() => {});
+    }
+
+    // Timeout de seguridad: si en 8s el negocio no resolvió, apagar el spinner
+    setTimeout(() => {
+      if (!this.negocioResuelto) {
+        this.negocioResuelto = true;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    }, 8000);
+
     // Suscribirse de manera reactiva a los cambios o carga del negocio
     const negocioSub = this.negociosService.negocio$.subscribe(async (negocio) => {
       console.log('💼 Negocio cargado o actualizado en dashboard:', negocio?.nombre || 'Ninguno');
-      
+
       this.limpiarSubscripcionesModulos();
 
       if (!negocio) {
-        this.isLoading = false;
-        this.cdr.detectChanges();
+        // Solo apagar el loading si ya tuvimos una carga previa (negocio llegó y luego se anuló)
+        if (this.negocioResuelto) {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }
+        // Si aún no se ha resuelto, mantener isLoading=true para mostrar spinner
         return;
       }
 
+      this.negocioResuelto = true;
       this.isLoading = true;
       this.cdr.detectChanges();
 
@@ -110,8 +131,9 @@ export class Dashboard implements OnInit, OnDestroy {
       });
       this.moduloSubscriptions.push(fiscalSub);
 
-      // 2. Suscribirse a Ventas
+      // 2. Cargar datos frescos y suscribirse a Ventas
       if (this.negociosService.tieneModulo('ventas')) {
+        this.ventasService.cargarVentas().catch(err => console.warn('Error cargando ventas:', err));
         const ventasSub = this.ventasService.ventas$.subscribe(async (ventas) => {
           await this.actualizarVentasStats(ventas);
           this.actualizarTransacciones(ventas);
@@ -125,8 +147,9 @@ export class Dashboard implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
 
-      // 3. Suscribirse a Productos
+      // 3. Cargar datos frescos y suscribirse a Productos
       if (this.negociosService.tieneModulo('inventario')) {
+        this.productosService.cargarProductos().catch(err => console.warn('Error cargando productos:', err));
         const productosSub = this.productosService.productos$.subscribe(productos => {
           this.actualizarProductosStats(productos);
           this.actualizarTopProductos(productos);
@@ -140,7 +163,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
       // 5. Verificar Onboarding
       this.verificarOnboarding();
-      
+
       this.cdr.detectChanges();
     });
     this.subscriptions.push(negocioSub);
