@@ -859,8 +859,12 @@
                   <td class="text-end text-muted font-monospace">{{ formatearMoneda(orden.impuestos) }}</td>
                   <td class="text-end fw-bold text-success font-monospace">{{ formatearMoneda(orden.total) }}</td>
                   <td>
-                    <button class="btn btn-xs btn-outline-primary shadow-sm" (click)="verDetalleOrden(orden.id)" title="Ver Detalle Completo">
-                      <i class="bi bi-eye-fill"></i> Detalle
+                    <button class="btn btn-xs btn-outline-primary shadow-sm" (click)="verDetalleOrden(orden.id)" [disabled]="cargandoDetalle" title="Ver Detalle Completo">
+                      @if (cargandoDetalle) {
+                        <span class="spinner-border spinner-border-sm"></span>
+                      } @else {
+                        <i class="bi bi-eye-fill"></i> Detalle
+                      }
                     </button>
                   </td>
                 </tr>

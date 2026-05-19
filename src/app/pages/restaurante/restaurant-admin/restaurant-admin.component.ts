@@ -88,6 +88,7 @@ export class RestaurantAdminComponent implements OnInit {
   // ── Órdenes / Historial ──────────────────────────────────
   historialOrdenes: any[] = [];
   ordenSeleccionada: any = null;
+  cargandoDetalle = false;
   busquedaOrden = '';
   filtroEstadoOrden = '';
 
@@ -600,13 +601,15 @@ export class RestaurantAdminComponent implements OnInit {
   }
 
   async verDetalleOrden(orderId: string): Promise<void> {
-    this.cargando = true;
+    this.cargandoDetalle = true;
+    this.ordenSeleccionada = null;
+    this.cdr.detectChanges();
     try {
       this.ordenSeleccionada = await this.ordersService.obtenerOrdenPorId(orderId);
     } catch (e: any) {
       Swal.fire('Error', e.message, 'error');
     } finally {
-      this.cargando = false;
+      this.cargandoDetalle = false;
       this.cdr.detectChanges();
     }
   }
