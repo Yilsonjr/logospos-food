@@ -62,14 +62,20 @@
   <!-- Sección Principal -->
   <section class="row g-2 flex-grow-1" style="min-height: 450px;">
 
-    <!-- Columna Izquierda: Tendencias de Ventas -->
-    @if (negociosService.tieneModulo('ventas')) {
+    <!-- Columna Izquierda: Tendencias de Ventas / Restaurante -->
+    @if (negociosService.tieneModulo('ventas') || negociosService.tieneModulo('restaurante')) {
     <div class="col-lg-8 d-flex flex-column">
       <div class="card border-0 shadow-sm flex-grow-1" style="min-height: 300px;">
         <div
           class="card-header bg-white border-0 pt-3 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
-            <h5 class="fw-bold text-dark mb-0">Tendencias de ventas</h5>
+            <h5 class="fw-bold text-dark mb-0">
+              @if (negociosService.tieneModulo('restaurante') && !negociosService.tieneModulo('ventas')) {
+                Ingresos del restaurante
+              } @else {
+                Tendencias de ventas
+              }
+            </h5>
             <small class="text-muted">Rendimiento en los últimos 7 días</small>
           </div>
           <div class="btn-group btn-group-sm">
@@ -141,6 +147,16 @@
                 [class.text-muted]="activeTab !== 'transactions'" style="cursor: pointer;"
                 (click)="activeTab = 'transactions'">
                 <i class="fa-solid fa-clock-rotate-left me-1"></i> Recientes
+              </a>
+            </li>
+            }
+            @if (negociosService.tieneModulo('restaurante')) {
+            <li class="nav-item">
+              <a class="nav-link border-0 fw-bold small text-uppercase py-2"
+                [class.active]="activeTab === 'orders'" [class.text-primary]="activeTab === 'orders'"
+                [class.text-muted]="activeTab !== 'orders'" style="cursor: pointer;"
+                (click)="activeTab = 'orders'">
+                <i class="fa-solid fa-utensils me-1"></i> Órdenes
               </a>
             </li>
             }
@@ -224,6 +240,48 @@
                }
              </div>
              }
+          }
+
+          <!-- CONTENIDO TAB 3: ÓRDENES RESTAURANTE -->
+          @if (activeTab === 'orders' && negociosService.tieneModulo('restaurante')) {
+            @if (isLoading) {
+            <div class="d-flex justify-content-center py-4">
+              <div class="spinner-border spinner-border-sm text-primary"></div>
+            </div>
+            } @else if (ordenesActivas.length === 0) {
+            <div class="text-center py-4 text-muted small">
+              <i class="fa-solid fa-circle-check fa-2x mb-2 opacity-50 text-success d-block"></i>
+              Sin órdenes activas en este momento
+            </div>
+            } @else {
+            <div class="list-group list-group-flush">
+              @for (o of ordenesActivas; track o.id) {
+              <div class="list-group-item border-0 px-0 py-2 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold shadow-sm"
+                    style="width:36px;height:36px;background:linear-gradient(135deg,#f59e0b,#d97706);font-size:0.85rem;">
+                    {{ o.mesa?.numero_mesa ?? '#' }}
+                  </div>
+                  <div style="line-height:1.2">
+                    <div class="fw-semibold small">Mesa {{ o.mesa?.numero_mesa ?? '—' }}</div>
+                    <small class="text-muted" style="font-size:0.7rem;">{{ o.estado }}</small>
+                  </div>
+                </div>
+                <div class="text-end" style="line-height:1.2">
+                  <div class="fw-bold text-primary small">{{ formatearMoneda(o.total) }}</div>
+                  <span class="badge rounded-pill"
+                    [class.bg-warning-subtle]="o.estado === 'abierta'"   [class.text-warning]="o.estado === 'abierta'"
+                    [class.bg-info-subtle]="o.estado === 'en_cocina'"    [class.text-info]="o.estado === 'en_cocina'"
+                    [class.bg-success-subtle]="o.estado === 'lista' || o.estado === 'pagando'"
+                    [class.text-success]="o.estado === 'lista' || o.estado === 'pagando'"
+                    style="font-size:0.65rem;">
+                    {{ o.estado === 'abierta' ? 'Abierta' : o.estado === 'en_cocina' ? 'En cocina' : o.estado === 'lista' ? 'Lista' : 'Pagando' }}
+                  </span>
+                </div>
+              </div>
+              }
+            </div>
+            }
           }
 
         </div>

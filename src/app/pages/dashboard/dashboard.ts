@@ -54,12 +54,13 @@ interface ChartData {
 })
 export class Dashboard implements OnInit, OnDestroy {
   selectedPeriod: 'weekly' | 'monthly' | 'yearly' = 'weekly';
-  activeTab: 'products' | 'transactions' = 'products';
+  activeTab: 'products' | 'transactions' | 'orders' = 'products';
   isLoading = true;
 
   stats: StatCard[] = [];
   topProducts: TopProduct[] = [];
   transactions: Transaction[] = [];
+  ordenesActivas: any[] = [];
   chartData: ChartData[] = [];
   modoFiscalActivo = false;
 
@@ -131,7 +132,7 @@ export class Dashboard implements OnInit, OnDestroy {
       });
       this.moduloSubscriptions.push(fiscalSub);
 
-      // 2. Cargar datos frescos y suscribirse a Ventas
+      // 2. Cargar datos según módulo disponible
       if (this.negociosService.tieneModulo('ventas')) {
         this.ventasService.cargarVentas().catch(err => console.warn('Error cargando ventas:', err));
         const ventasSub = this.ventasService.ventas$.subscribe(async (ventas) => {
@@ -142,6 +143,14 @@ export class Dashboard implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         });
         this.moduloSubscriptions.push(ventasSub);
+      } else if (this.negociosService.tieneModulo('restaurante')) {
+        // Negocio tipo restaurante/bar: cargar datos propios del restaurante
+        this.activeTab = 'orders';
+        await this.cargarStatsRestaurante();
+        await this.cargarDatosManuales();
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        return; // cargarDatosManuales ya fue llamado, salir temprano
       } else {
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -173,10 +182,11 @@ export class Dashboard implements OnInit, OnDestroy {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(async (event: any) => {
         if (event.url === '/' || event.url === '/dashboard') {
-          const tasks = [];
+          const tasks: Promise<any>[] = [];
           if (this.negociosService.tieneModulo('ventas')) tasks.push(this.ventasService.cargarVentas());
           if (this.negociosService.tieneModulo('inventario')) tasks.push(this.productosService.cargarProductos());
           if (this.negociosService.tieneModulo('compras')) tasks.push(this.comprasService.cargarCompras());
+          if (this.negociosService.tieneModulo('restaurante')) tasks.push(this.cargarStatsRestaurante());
           tasks.push(this.cargarDatosManuales());
           await Promise.all(tasks);
         }
@@ -222,6 +232,94 @@ export class Dashboard implements OnInit, OnDestroy {
         localStorage.setItem('onboarding_visto', 'true');
       }
     });
+  }
+
+  private upsertStat(stat: StatCard) {
+    const idx = this.stats.findIndex(s => s.title === stat.title);
+    if (idx > -1) this.stats[idx] = stat;
+    else this.stats.push(stat);
+  }
+
+  private actualizarChartRestaurante(pagos: { monto: number; created_at: string }[]) {
+    const fechaInicio = new Date();
+    fechaInicio.setDate(fechaInicio.getDate() - 7);
+    const pagosPorDia = new Map<string, number>();
+
+    pagos.filter(p => new Date(p.created_at) >= fechaInicio).forEach(p => {
+      const d = new Date(p.created_at);
+      const key = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+      pagosPorDia.set(key, (pagosPorDia.get(key) || 0) + p.monto);
+    });
+
+    const maxVal = Math.max(...Array.from(pagosPorDia.values()), 1);
+    this.chartData = Array.from(pagosPorDia.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([fecha, total]) => ({ label: this.formatearDia(fecha), value: total, percentage: (total / maxVal) * 100 }));
+  }
+
+  async cargarStatsRestaurante() {
+    const negocioId = localStorage.getItem('logos_negocio_id') || '';
+    const hoyInicio = new Date();
+    hoyInicio.setHours(0, 0, 0, 0);
+
+    // 1. Ventas del día desde pagos confirmados
+    try {
+      const { data: pagos } = await this.supabaseService.client
+        .from('restaurant_order_payments')
+        .select('monto, created_at')
+        .eq('pagado', true)
+        .gte('created_at', hoyInicio.toISOString());
+
+      const totalHoy = pagos?.reduce((s, p) => s + p.monto, 0) || 0;
+      this.upsertStat({
+        title: 'Ventas de Hoy', value: this.formatearMoneda(totalHoy),
+        change: 'Ingresos del día', isPositive: true,
+        icon: 'fa-money-bill-wave', iconBg: 'bg-primary-subtle text-primary'
+      });
+      this.actualizarChartRestaurante(pagos || []);
+    } catch (e) { console.warn('Error cargando pagos restaurante:', e); }
+
+    // 2. Órdenes activas + historial reciente
+    try {
+      const { data: ordenes } = await this.supabaseService.client
+        .from('restaurant_orders')
+        .select('id, estado, total, hora_apertura, mesa:restaurant_tables(numero_mesa)')
+        .eq('negocio_id', negocioId)
+        .not('estado', 'in', '(cerrada,cancelada)')
+        .order('hora_apertura', { ascending: false });
+
+      const activas = ordenes?.length || 0;
+      this.upsertStat({
+        title: 'Órdenes Activas', value: `${activas}`,
+        change: activas > 0 ? 'En proceso' : 'Sin órdenes activas',
+        isPositive: true, icon: 'fa-utensils',
+        iconBg: activas > 0 ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success',
+        isUrgent: false
+      });
+      this.ordenesActivas = ordenes?.slice(0, 10) || [];
+    } catch (e) { console.warn('Error cargando órdenes activas:', e); }
+
+    // 3. Mesas ocupadas vs total
+    try {
+      const { data: mesas } = await this.supabaseService.client
+        .from('restaurant_tables')
+        .select('id, estado')
+        .eq('negocio_id', negocioId);
+
+      const total = mesas?.length || 0;
+      const ocupadas = mesas?.filter((m: any) => m.estado === 'ocupada').length || 0;
+      this.upsertStat({
+        title: 'Mesas Ocupadas', value: `${ocupadas} / ${total}`,
+        change: ocupadas > 0 ? 'Con clientes' : 'Todas libres',
+        isPositive: ocupadas < total, icon: 'fa-chair',
+        iconBg: ocupadas > 0 ? 'bg-info-subtle text-info' : 'bg-success-subtle text-success'
+      });
+    } catch (e) { console.warn('Error cargando mesas:', e); }
+
+    // 4. Efectivo en caja (si tiene módulo)
+    if (this.negociosService.tieneModulo('caja')) {
+      this.inicializarTarjetaSiFalta('Efectivo en Caja', 'fa-wallet', 'bg-success-subtle text-success');
+    }
   }
 
   async cargarDatosManuales() {
