@@ -80,6 +80,9 @@ import { TableWithOrder } from '../../models/restaurant.models';
           </div>
         </div>
         <div class="d-flex gap-2">
+          <a routerLink="/restaurante/reportes" class="btn-kds" style="background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)">
+            <i class="bi bi-bar-chart-fill"></i> Reportes
+          </a>
           <a routerLink="/restaurante/admin" class="btn-kds" style="background:linear-gradient(135deg,#374151 0%,#1f2937 100%)">
             <i class="bi bi-gear-fill"></i> Configurar
           </a>

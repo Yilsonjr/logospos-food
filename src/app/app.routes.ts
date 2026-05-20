@@ -4,6 +4,7 @@ import { RestauranteComponent } from './pages/restaurante/restaurante.component'
 import { KitchenDisplayComponent } from './pages/restaurante/kitchen-display/kitchen-display.component';
 import { PrintersAdminComponent } from './pages/restaurante/printers-admin/printers-admin.component';
 import { RestaurantAdminComponent } from './pages/restaurante/restaurant-admin/restaurant-admin.component';
+import { ReportesRestauranteComponent } from './pages/restaurante/reportes-restaurante/reportes-restaurante.component';
 import { Inventario } from './pages/inventario/inventario.component';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { ProveedoresComponent } from './pages/inventario/proveedores/proveedores.component';
@@ -304,6 +305,12 @@ export const routes: Routes = [
     {
         path: 'restaurante/admin',
         component: RestaurantAdminComponent,
+        canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
+        data: { permissions: ['restaurante.admin'], modulo: 'restaurante' }
+    },
+    {
+        path: 'restaurante/reportes',
+        component: ReportesRestauranteComponent,
         canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
         data: { permissions: ['restaurante.admin'], modulo: 'restaurante' }
     },

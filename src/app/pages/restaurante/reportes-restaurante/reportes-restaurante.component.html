@@ -1,0 +1,444 @@
+<div class="rr-page">
+
+  <!-- ── TOPBAR ── -->
+  <div class="rr-topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="rr-back-btn" (click)="regresar()">
+        <i class="bi bi-arrow-left"></i> Volver
+      </button>
+      <div class="rr-brand">
+        <div class="rr-brand-icon"><i class="bi bi-bar-chart-fill"></i></div>
+        <div>
+          <p class="rr-title mb-0">Reportes</p>
+          <p class="rr-subtitle mb-0">Módulo Restaurante</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selector de período -->
+    <div class="rr-periodo-wrap">
+      @for (p of periodos; track p.value) {
+        <button class="rr-periodo-btn" [class.active]="periodo === p.value"
+          (click)="cambiarPeriodo(p.value)">{{ p.label }}</button>
+      }
+    </div>
+
+    <!-- Fechas personalizadas -->
+    @if (periodo === 'personalizado') {
+      <div class="rr-custom-dates">
+        <input type="date" class="rr-date-input" [(ngModel)]="fechaDesde">
+        <span class="text-muted small">→</span>
+        <input type="date" class="rr-date-input" [(ngModel)]="fechaHasta">
+        <button class="rr-apply-btn" (click)="aplicarFechas()">
+          <i class="bi bi-check2"></i> Aplicar
+        </button>
+      </div>
+    }
+
+    <button class="rr-refresh-btn" (click)="cargarTodo()" [disabled]="cargando" title="Actualizar">
+      <i class="bi bi-arrow-clockwise" [class.spin]="cargando"></i>
+    </button>
+  </div>
+
+  <!-- ── LOADING ── -->
+  @if (cargando && !resumen) {
+    <div class="rr-loading">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-3 text-muted">Cargando reportes…</p>
+    </div>
+  }
+
+  @if (resumen) {
+    <!-- ── KPI CARDS ── -->
+    <div class="rr-kpi-grid">
+      <div class="rr-kpi-card kpi-ventas">
+        <div class="rr-kpi-icon"><i class="bi bi-cash-stack"></i></div>
+        <div>
+          <p class="rr-kpi-label">Ventas Totales</p>
+          <p class="rr-kpi-value">{{ formatMoneda(resumen.totalVentas) }}</p>
+        </div>
+      </div>
+      <div class="rr-kpi-card kpi-ordenes">
+        <div class="rr-kpi-icon"><i class="bi bi-receipt"></i></div>
+        <div>
+          <p class="rr-kpi-label">Órdenes Cerradas</p>
+          <p class="rr-kpi-value">{{ resumen.totalOrdenes }}</p>
+        </div>
+      </div>
+      <div class="rr-kpi-card kpi-ticket">
+        <div class="rr-kpi-icon"><i class="bi bi-tag-fill"></i></div>
+        <div>
+          <p class="rr-kpi-label">Ticket Promedio</p>
+          <p class="rr-kpi-value">{{ formatMoneda(resumen.ticketPromedio) }}</p>
+        </div>
+      </div>
+      <div class="rr-kpi-card kpi-itbis">
+        <div class="rr-kpi-icon"><i class="bi bi-percent"></i></div>
+        <div>
+          <p class="rr-kpi-label">ITBIS Recaudado</p>
+          <p class="rr-kpi-value">{{ formatMoneda(resumen.totalItbis) }}</p>
+        </div>
+      </div>
+      <div class="rr-kpi-card kpi-propina">
+        <div class="rr-kpi-icon"><i class="bi bi-star-fill"></i></div>
+        <div>
+          <p class="rr-kpi-label">Propinas</p>
+          <p class="rr-kpi-value">{{ formatMoneda(resumen.totalPropinas) }}</p>
+        </div>
+      </div>
+      @if (resumen.totalDescuentos > 0) {
+        <div class="rr-kpi-card kpi-descuento">
+          <div class="rr-kpi-icon"><i class="bi bi-scissors"></i></div>
+          <div>
+            <p class="rr-kpi-label">Descuentos</p>
+            <p class="rr-kpi-value">{{ formatMoneda(resumen.totalDescuentos) }}</p>
+          </div>
+        </div>
+      }
+      @if (cocina) {
+        <div class="rr-kpi-card kpi-cocina">
+          <div class="rr-kpi-icon"><i class="bi bi-stopwatch-fill"></i></div>
+          <div>
+            <p class="rr-kpi-label">Tiempo Prom. Cocina</p>
+            <p class="rr-kpi-value">{{ cocina.tiempoPromedioMinutos }} min</p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ── TABS ── -->
+    <div class="rr-tabs">
+      <button class="rr-tab" [class.active]="tabActiva === 'ventas'"     (click)="tabActiva = 'ventas'">
+        <i class="bi bi-graph-up-arrow"></i> Ventas
+      </button>
+      <button class="rr-tab" [class.active]="tabActiva === 'platos'"     (click)="tabActiva = 'platos'">
+        <i class="bi bi-egg-fried"></i> Top Platos
+      </button>
+      <button class="rr-tab" [class.active]="tabActiva === 'pagos'"      (click)="tabActiva = 'pagos'">
+        <i class="bi bi-credit-card-fill"></i> Pagos
+      </button>
+      <button class="rr-tab" [class.active]="tabActiva === 'margenes'"   (click)="tabActiva = 'margenes'">
+        <i class="bi bi-pie-chart-fill"></i> Márgenes
+      </button>
+      <button class="rr-tab" [class.active]="tabActiva === 'inventario'" (click)="tabActiva = 'inventario'">
+        <i class="bi bi-boxes"></i> Inventario
+      </button>
+      <button class="rr-tab" [class.active]="tabActiva === 'cocina'"     (click)="tabActiva = 'cocina'">
+        <i class="bi bi-fire"></i> Cocina
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: VENTAS POR DÍA
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'ventas') {
+      <div class="rr-card">
+        <div class="rr-card-header">
+          <h6 class="rr-card-title"><i class="bi bi-bar-chart-line-fill me-2"></i>Ventas por Día</h6>
+        </div>
+        @if (ventasPorDia.length === 0) {
+          <div class="rr-empty">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Sin ventas en el período seleccionado</span>
+          </div>
+        } @else {
+          <div class="rr-bar-chart">
+            @for (dia of ventasPorDia; track trackByFecha($index, dia)) {
+              <div class="rr-bar-row">
+                <span class="rr-bar-label">{{ dia.label }}</span>
+                <div class="rr-bar-track">
+                  <div class="rr-bar-fill" [style.width]="barWidth(dia.total, maxVentaDia)">
+                    <span class="rr-bar-value">{{ formatMoneda(dia.total) }}</span>
+                  </div>
+                </div>
+                <span class="rr-bar-count">{{ dia.ordenes }} ó.</span>
+              </div>
+            }
+          </div>
+          <div class="rr-bar-total">
+            <span>Total período:</span>
+            <strong>{{ formatMoneda(resumen.totalVentas) }}</strong>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: TOP PLATOS
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'platos') {
+      <div class="rr-card">
+        <div class="rr-card-header">
+          <h6 class="rr-card-title"><i class="bi bi-trophy-fill me-2 text-warning"></i>Platos Más Vendidos</h6>
+          <span class="rr-card-sub">Top 10 por cantidad</span>
+        </div>
+        @if (topPlatos.length === 0) {
+          <div class="rr-empty">
+            <i class="bi bi-egg-fried"></i>
+            <span>Sin datos de ventas en el período</span>
+          </div>
+        } @else {
+          <div class="rr-platos-list">
+            @for (plato of topPlatos; track trackByPlato($index, plato); let i = $index) {
+              <div class="rr-plato-row">
+                <span class="rr-plato-rank" [class.rank-gold]="i === 0" [class.rank-silver]="i === 1" [class.rank-bronze]="i === 2">
+                  #{{ i + 1 }}
+                </span>
+                <div class="rr-plato-bar-wrap">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span class="rr-plato-nombre">{{ plato.nombre }}</span>
+                    <span class="rr-plato-meta">{{ plato.cantidad }} uds · {{ formatMoneda(plato.total) }}</span>
+                  </div>
+                  <div class="rr-bar-track sm">
+                    <div class="rr-bar-fill plato" [style.width]="barWidth(plato.cantidad, maxTopPlato)"></div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: MÉTODOS DE PAGO
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'pagos') {
+      <div class="rr-card">
+        <div class="rr-card-header">
+          <h6 class="rr-card-title"><i class="bi bi-credit-card-fill me-2"></i>Distribución de Pagos</h6>
+        </div>
+        @if (pagosPorMetodo.length === 0) {
+          <div class="rr-empty">
+            <i class="bi bi-credit-card"></i>
+            <span>Sin pagos registrados en el período</span>
+          </div>
+        } @else {
+          <div class="rr-pagos-layout">
+            <!-- Donut chart CSS -->
+            <div class="rr-donut-wrap">
+              <div class="rr-donut" [style.background]="conicGradient()">
+                <div class="rr-donut-hole">
+                  <span class="rr-donut-total">{{ formatMoneda(resumen.totalVentas) }}</span>
+                  <span class="rr-donut-label">Total</span>
+                </div>
+              </div>
+            </div>
+            <!-- Leyenda + tabla -->
+            <div class="rr-pagos-detail">
+              @for (p of pagosPorMetodo; track trackByPago($index, p)) {
+                <div class="rr-pago-row">
+                  <span class="rr-pago-dot" [style.background]="coloresPago[p.forma_pago] || '#94a3b8'"></span>
+                  <span class="rr-pago-nombre">{{ labelPago[p.forma_pago] || p.forma_pago }}</span>
+                  <div class="rr-pago-bar-wrap">
+                    <div class="rr-bar-track sm">
+                      <div class="rr-bar-fill pago" [style.width]="p.porcentaje + '%'"
+                        [style.background]="coloresPago[p.forma_pago] || '#94a3b8'"></div>
+                    </div>
+                  </div>
+                  <span class="rr-pago-pct">{{ p.porcentaje }}%</span>
+                  <span class="rr-pago-monto">{{ formatMoneda(p.monto) }}</span>
+                  <span class="rr-pago-count">{{ p.ordenes }} pago(s)</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: MÁRGENES DE GANANCIA
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'margenes') {
+      <div class="rr-card">
+        <div class="rr-card-header">
+          <h6 class="rr-card-title"><i class="bi bi-pie-chart-fill me-2"></i>Rentabilidad por Plato</h6>
+          <span class="rr-card-sub">Calculado desde recetas e insumos</span>
+        </div>
+        @if (margenes.length === 0) {
+          <div class="rr-empty">
+            <i class="bi bi-pie-chart"></i>
+            <span>No hay platos activos configurados</span>
+          </div>
+        } @else {
+          <div class="rr-info-banner">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            El costo se calcula multiplicando las cantidades de la receta por el costo unitario de cada insumo.
+            Los platos sin receta configurada aparecen en gris.
+          </div>
+          <div class="rr-table-wrap">
+            <table class="rr-table">
+              <thead>
+                <tr>
+                  <th>Plato</th>
+                  <th class="text-end">Precio Venta</th>
+                  <th class="text-end">Costo Receta</th>
+                  <th class="text-end">Margen</th>
+                  <th class="text-center">% Margen</th>
+                  <th>Rentabilidad</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of margenes; track trackByMargen($index, m)) {
+                  <tr [class.sin-receta]="m.sin_receta">
+                    <td class="fw-semibold">{{ m.nombre }}</td>
+                    <td class="text-end font-monospace">{{ formatMoneda(m.precio_venta) }}</td>
+                    <td class="text-end font-monospace text-muted">
+                      @if (m.sin_receta) { <span class="badge bg-secondary-subtle text-secondary">Sin receta</span> }
+                      @else { {{ formatMoneda(m.costo_receta) }} }
+                    </td>
+                    <td class="text-end font-monospace fw-bold" [class]="m.sin_receta ? 'text-muted' : colorMargen(m.margen_pct)">
+                      @if (!m.sin_receta) { {{ formatMoneda(m.margen) }} }
+                      @else { — }
+                    </td>
+                    <td class="text-center">
+                      @if (m.sin_receta) {
+                        <span class="rr-badge-neutral">—</span>
+                      } @else {
+                        <span class="rr-margen-badge {{ badgeMargen(m.margen_pct) }}">{{ m.margen_pct }}%</span>
+                      }
+                    </td>
+                    <td>
+                      @if (!m.sin_receta) {
+                        <div class="rr-bar-track sm">
+                          <div class="rr-bar-fill margen"
+                            [style.width]="m.margen_pct + '%'"
+                            [class.fill-alto]="m.margen_pct >= 60"
+                            [class.fill-medio]="m.margen_pct >= 35 && m.margen_pct < 60"
+                            [class.fill-bajo]="m.margen_pct < 35"></div>
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="rr-margen-leyenda">
+            <span class="rr-margen-badge badge-margen-alto">≥ 60% Bueno</span>
+            <span class="rr-margen-badge badge-margen-medio">35–59% Aceptable</span>
+            <span class="rr-margen-badge badge-margen-bajo">< 35% Revisar</span>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: INVENTARIO
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'inventario' && inventario) {
+      <div class="rr-grid-2">
+        <!-- Resumen de stock -->
+        <div class="rr-card">
+          <div class="rr-card-header">
+            <h6 class="rr-card-title"><i class="bi bi-boxes me-2"></i>Valuación de Stock</h6>
+          </div>
+          <div class="rr-inv-kpis">
+            <div class="rr-inv-kpi">
+              <span class="rr-inv-kpi-val text-primary">{{ inventario.total_items }}</span>
+              <span class="rr-inv-kpi-label">Insumos activos</span>
+            </div>
+            <div class="rr-inv-kpi">
+              <span class="rr-inv-kpi-val text-success">{{ formatMoneda(inventario.valor_total_stock) }}</span>
+              <span class="rr-inv-kpi-label">Valor total en stock</span>
+            </div>
+            <div class="rr-inv-kpi">
+              <span class="rr-inv-kpi-val" [class.text-warning]="inventario.items_bajo_stock > 0" [class.text-muted]="inventario.items_bajo_stock === 0">
+                {{ inventario.items_bajo_stock }}
+              </span>
+              <span class="rr-inv-kpi-label">Bajo stock mínimo</span>
+            </div>
+            <div class="rr-inv-kpi">
+              <span class="rr-inv-kpi-val" [class.text-danger]="inventario.items_sin_stock > 0" [class.text-muted]="inventario.items_sin_stock === 0">
+                {{ inventario.items_sin_stock }}
+              </span>
+              <span class="rr-inv-kpi-label">Sin stock</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top consumidos (últimos 30 días) -->
+        <div class="rr-card">
+          <div class="rr-card-header">
+            <h6 class="rr-card-title"><i class="bi bi-arrow-down-circle-fill me-2 text-danger"></i>Más Consumidos (30 días)</h6>
+          </div>
+          @if (inventario.top_consumidos.length === 0) {
+            <div class="rr-empty sm">
+              <i class="bi bi-box-seam"></i>
+              <span>Sin movimientos de consumo</span>
+            </div>
+          } @else {
+            <div class="rr-top-consumidos">
+              @for (c of inventario.top_consumidos; track c.nombre) {
+                <div class="rr-consumido-row">
+                  <span class="rr-consumido-nombre">{{ c.nombre }}</span>
+                  <span class="rr-consumido-cant">{{ c.consumido | number:'1.0-2' }} {{ c.unidad }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: RENDIMIENTO COCINA
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'cocina' && cocina) {
+      <div class="rr-card">
+        <div class="rr-card-header">
+          <h6 class="rr-card-title"><i class="bi bi-fire me-2 text-warning"></i>Rendimiento de Cocina</h6>
+          <span class="rr-card-sub">Basado en tickets de cocina con hora de inicio y finalización</span>
+        </div>
+        <div class="rr-cocina-kpis">
+          <div class="rr-cocina-kpi">
+            <div class="rr-cocina-icon" style="background: rgba(34,197,94,.12); color:#16a34a">
+              <i class="bi bi-stopwatch-fill"></i>
+            </div>
+            <span class="rr-cocina-val">{{ cocina.tiempoPromedioMinutos }} min</span>
+            <span class="rr-cocina-label">Tiempo promedio de preparación</span>
+          </div>
+          <div class="rr-cocina-kpi">
+            <div class="rr-cocina-icon" style="background: rgba(59,130,246,.12); color:#2563eb">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <span class="rr-cocina-val">{{ cocina.ordenesAtendidas }}</span>
+            <span class="rr-cocina-label">Tickets atendidos</span>
+          </div>
+          <div class="rr-cocina-kpi">
+            <div class="rr-cocina-icon"
+              [style.background]="cocina.ordenesExcedidas > 0 ? 'rgba(239,68,68,.12)' : 'rgba(100,116,139,.1)'"
+              [style.color]="cocina.ordenesExcedidas > 0 ? '#dc2626' : '#64748b'">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <span class="rr-cocina-val" [class.text-danger]="cocina.ordenesExcedidas > 0">
+              {{ cocina.ordenesExcedidas }}
+            </span>
+            <span class="rr-cocina-label">Excedieron 20 min</span>
+          </div>
+          @if (cocina.ordenesAtendidas > 0) {
+            <div class="rr-cocina-kpi">
+              <div class="rr-cocina-icon" style="background: rgba(168,85,247,.12); color:#9333ea">
+                <i class="bi bi-speedometer2"></i>
+              </div>
+              <span class="rr-cocina-val">
+                {{ ((cocina.ordenesAtendidas - cocina.ordenesExcedidas) / cocina.ordenesAtendidas * 100) | number:'1.0-0' }}%
+              </span>
+              <span class="rr-cocina-label">A tiempo (≤ 20 min)</span>
+            </div>
+          }
+        </div>
+
+        @if (cocina.tiempoPromedioMinutos === 0 && cocina.ordenesAtendidas === 0) {
+          <div class="rr-empty">
+            <i class="bi bi-fire"></i>
+            <span>Sin datos de cocina para el período. Los tickets deben estar en estado "Entregado" y tener hora de inicio.</span>
+          </div>
+        }
+      </div>
+    }
+
+  } <!-- end @if (resumen) -->
+
+</div>
