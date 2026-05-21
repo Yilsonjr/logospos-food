@@ -119,6 +119,13 @@ export class OrderModalComponent implements OnInit, OnDestroy {
     if (idx >= 0) {
       this.modificadoresSeleccionados.splice(idx, 1);
     } else {
+      // Si el grupo es de selección única (max_seleccion = 1), reemplaza el anterior del mismo grupo
+      if (mod.max_seleccion === 1) {
+        const idxGrupo = this.modificadoresSeleccionados.findIndex(m =>
+          this.itemSeleccionado?.modificadores?.find(x => x.nombre === m.nombre)?.grupo_nombre === mod.grupo_nombre
+        );
+        if (idxGrupo >= 0) this.modificadoresSeleccionados.splice(idxGrupo, 1);
+      }
       this.modificadoresSeleccionados.push({
         nombre: mod.nombre,
         precio_adicional: mod.precio_adicional
@@ -128,6 +135,35 @@ export class OrderModalComponent implements OnInit, OnDestroy {
 
   tieneModificador(nombre: string): boolean {
     return this.modificadoresSeleccionados.some(m => m.nombre === nombre);
+  }
+
+  /** Agrupa los modificadores del item seleccionado por grupo_nombre */
+  get gruposModificadores(): { grupo: string; obligatorio: boolean; max: number; items: MenuItemModifier[] }[] {
+    const mods = this.itemSeleccionado?.modificadores?.filter(m => m.activo) || [];
+    const map = new Map<string, MenuItemModifier[]>();
+    for (const mod of mods) {
+      const g = mod.grupo_nombre || 'Opciones';
+      if (!map.has(g)) map.set(g, []);
+      map.get(g)!.push(mod);
+    }
+    return Array.from(map.entries()).map(([grupo, items]) => ({
+      grupo,
+      obligatorio: items.some(i => i.obligatorio),
+      max: items[0]?.max_seleccion ?? 0,
+      items
+    }));
+  }
+
+  get precioConMods(): number {
+    const costoMods = this.modificadoresSeleccionados.reduce((acc, m) => acc + m.precio_adicional, 0);
+    return (this.itemSeleccionado?.precio || 0) + costoMods;
+  }
+
+  seleccionadosEnGrupo(grupo: string): number {
+    const nombres = this.itemSeleccionado?.modificadores
+      ?.filter(m => (m.grupo_nombre || 'Opciones') === grupo)
+      .map(m => m.nombre) || [];
+    return this.modificadoresSeleccionados.filter(m => nombres.includes(m.nombre)).length;
   }
 
   agregarAlCarrito(): void {

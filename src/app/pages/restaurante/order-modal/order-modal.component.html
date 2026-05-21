@@ -93,46 +93,77 @@
         <!-- Panel flotante: detalle de item seleccionado -->
         @if (itemSeleccionado) {
           <div class="item-detalle-panel">
+
+            <!-- Header del plato -->
             <div class="item-detalle-header">
-              <strong>{{ itemSeleccionado.nombre }}</strong>
+              <div>
+                <strong class="item-detalle-nombre">{{ itemSeleccionado.nombre }}</strong>
+                @if (itemSeleccionado.descripcion) {
+                  <p class="item-detalle-desc">{{ itemSeleccionado.descripcion }}</p>
+                }
+              </div>
               <button class="btn btn-sm btn-close" (click)="itemSeleccionado = null"></button>
             </div>
 
-            @if (itemSeleccionado.descripcion) {
-              <p class="text-muted small mb-2">{{ itemSeleccionado.descripcion }}</p>
-            }
+            <!-- Grupos de modificadores / guarniciones -->
+            @if (gruposModificadores.length) {
+              <div class="modificadores-grupos">
+                @for (grupo of gruposModificadores; track grupo.grupo) {
+                  <div class="mod-grupo">
 
-            <!-- Modificadores agrupados -->
-            @if (itemSeleccionado.modificadores?.length) {
-              <div class="modificadores-section">
-                <small class="text-muted fw-bold d-block mb-1">Opciones:</small>
-                @for (mod of itemSeleccionado.modificadores; track mod.id) {
-                  @if (mod.activo) {
-                    <label class="modificador-label">
-                      <input type="checkbox"
-                        [checked]="tieneModificador(mod.nombre)"
-                        (change)="toggleModificador(mod)">
-                      {{ mod.nombre }}
-                      @if (mod.precio_adicional > 0) {
-                        <span class="text-success ms-1">+RD$ {{ mod.precio_adicional | number:'1.2-2' }}</span>
+                    <!-- Cabecera del grupo -->
+                    <div class="mod-grupo-header">
+                      <span class="mod-grupo-nombre">{{ grupo.grupo }}</span>
+                      <div class="d-flex align-items-center gap-1">
+                        @if (grupo.obligatorio) {
+                          <span class="mod-badge obligatorio">Requerido</span>
+                        } @else {
+                          <span class="mod-badge opcional">Opcional</span>
+                        }
+                        @if (grupo.max > 1) {
+                          <span class="mod-badge max">Máx {{ grupo.max }}</span>
+                        }
+                        @if (grupo.max === 1) {
+                          <span class="mod-badge max">Elige 1</span>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Chips de selección -->
+                    <div class="mod-chips">
+                      @for (mod of grupo.items; track mod.id) {
+                        <button class="mod-chip"
+                          [class.selected]="tieneModificador(mod.nombre)"
+                          (click)="toggleModificador(mod)">
+                          @if (tieneModificador(mod.nombre)) {
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                          }
+                          {{ mod.nombre }}
+                          @if (mod.precio_adicional > 0) {
+                            <span class="mod-chip-precio">+RD$ {{ mod.precio_adicional | number:'1.0-0' }}</span>
+                          }
+                        </button>
                       }
-                    </label>
-                  }
+                    </div>
+
+                  </div>
                 }
               </div>
             }
 
             <!-- Notas especiales -->
-            <div class="mt-2">
-              <label class="small text-muted">Notas especiales:</label>
-              <textarea class="form-control form-control-sm" rows="2"
-                [(ngModel)]="notasItem" placeholder="Sin cebolla, término…"></textarea>
+            <div class="item-notas-wrap">
+              <label class="item-notas-label">
+                <i class="bi bi-pencil-square me-1"></i>Notas especiales
+              </label>
+              <textarea class="form-control form-control-sm item-notas-input" rows="2"
+                [(ngModel)]="notasItem" placeholder="Sin cebolla, bien cocido, sin sal…"></textarea>
             </div>
 
             <!-- Comensal -->
             @if (cantidadComensales > 1) {
-              <div class="mt-2">
-                <label class="small text-muted">Asignar a comensal:</label>
+              <div class="item-comensal-wrap">
+                <label class="item-notas-label"><i class="bi bi-person me-1"></i>Asignar a:</label>
                 <select class="form-select form-select-sm" [(ngModel)]="comensalItem">
                   <option [value]="null">General</option>
                   @for (n of comensalesRange; track n) {
@@ -142,18 +173,21 @@
               </div>
             }
 
-            <!-- Cantidad + agregar -->
-            <div class="d-flex align-items-center gap-2 mt-3">
+            <!-- Footer: cantidad + agregar -->
+            <div class="item-detalle-footer">
               <div class="cantidad-control">
-                <button class="btn btn-sm btn-outline-secondary" (click)="cantidadItem = cantidadItem > 1 ? cantidadItem - 1 : 1">−</button>
+                <button class="btn btn-sm btn-outline-secondary"
+                  (click)="cantidadItem = cantidadItem > 1 ? cantidadItem - 1 : 1">−</button>
                 <span class="cantidad-display">{{ cantidadItem }}</span>
-                <button class="btn btn-sm btn-outline-secondary" (click)="cantidadItem = cantidadItem + 1">+</button>
+                <button class="btn btn-sm btn-outline-secondary"
+                  (click)="cantidadItem = cantidadItem + 1">+</button>
               </div>
-              <button class="btn btn-primary btn-sm flex-grow-1" (click)="agregarAlCarrito()">
-                <i class="bi bi-cart-plus"></i>
-                Agregar · RD$ {{ (itemSeleccionado.precio * cantidadItem) | number:'1.2-2' }}
+              <button class="btn btn-agregar flex-grow-1" (click)="agregarAlCarrito()">
+                <i class="bi bi-cart-plus me-1"></i>
+                Agregar · RD$ {{ precioConMods * cantidadItem | number:'1.2-2' }}
               </button>
             </div>
+
           </div>
         }
       </div>
