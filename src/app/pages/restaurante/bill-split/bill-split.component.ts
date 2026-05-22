@@ -8,6 +8,8 @@ import { SupabaseService } from '../../../services/supabase.service';
 import { CajaService } from '../../../services/caja.service';
 import { AuthService } from '../../../services/auth.service';
 import { PrintService } from '../../../services/print.service';
+import { FiscalService } from '../../../services/fiscal.service';
+import { ConfiguracionFiscal, TIPOS_COMPROBANTE } from '../../../models/fiscal.model';
 import {
   OrderWithItems, OrderItemWithMenuItem, CuentaComensal, FormaPago
 } from '../../../models/restaurant.models';
@@ -40,6 +42,10 @@ export class BillSplitComponent implements OnInit {
   tasaItbis = 0.18;
   negocioNombre = '';
 
+  // Fiscal
+  configFiscal: ConfiguracionFiscal | null = null;
+  readonly tiposComprobante = TIPOS_COMPROBANTE.filter(t => t.codigo !== 'B03' && t.codigo !== 'B04');
+
   readonly formasPago: FormaPago[] = ['efectivo', 'tarjeta', 'transferencia', 'cheque', 'mixto'];
 
   constructor(
@@ -50,15 +56,20 @@ export class BillSplitComponent implements OnInit {
     private cajaService: CajaService,
     private authService: AuthService,
     private printService: PrintService,
+    private fiscalService: FiscalService,
     private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
     try {
       this.cargando = true;
-      const negocio = await this.negociosService.cargarNegocio();
+      const [negocio] = await Promise.all([
+        this.negociosService.cargarNegocio(),
+        this.fiscalService.cargarConfiguracion()
+      ]);
       this.tasaItbis = negocio?.tasa_itbis ?? 0.18;
       this.negocioNombre = negocio?.nombre || '';
+      this.fiscalService.config$.subscribe(c => this.configFiscal = c);
       this.orden = await this.ordersService.obtenerOrdenPorId(this.orderId);
       if (this.orden) this.inicializarCuentaSimple();
     } catch (e: any) {
@@ -171,6 +182,17 @@ export class BillSplitComponent implements OnInit {
     try {
       const negocioId = localStorage.getItem('logos_negocio_id') || '';
 
+      // Generar NCF si el negocio tiene modo fiscal y el cajero lo solicitó
+      let ncf: string | null = null;
+      if (cuenta.requiere_comprobante && cuenta.tipo_ncf) {
+        try {
+          ncf = await this.fiscalService.generarNCF(cuenta.tipo_ncf);
+        } catch (e: any) {
+          await Swal.fire('Error fiscal', `No se pudo generar el NCF: ${e.message}`, 'error');
+          return;
+        }
+      }
+
       await this.supabaseService.client
         .from('restaurant_order_payments')
         .insert({
@@ -180,7 +202,11 @@ export class BillSplitComponent implements OnInit {
           forma_pago: cuenta.forma_pago,
           comensal_numero: this.modoDivision === 'individual' ? null : cuenta.numero,
           propina_incluida: cuenta.propina,
-          pagado: true
+          pagado: true,
+          ncf: ncf || null,
+          tipo_ncf: cuenta.requiere_comprobante ? (cuenta.tipo_ncf || null) : null,
+          rnc_cliente: cuenta.requiere_comprobante ? (cuenta.rnc_cliente || null) : null,
+          nombre_cliente_fiscal: cuenta.requiere_comprobante ? (cuenta.nombre_cliente_fiscal || null) : null
         });
 
       // --- REGISTRAR MOVIMIENTO EN CAJA ---
@@ -256,7 +282,7 @@ export class BillSplitComponent implements OnInit {
         } catch {
           console.warn('[BillSplit] Impresora térmica no disponible');
         }
-        this.abrirTicketEnNavegador(cuenta.forma_pago);
+        this.abrirTicketEnNavegador(cuenta.forma_pago, ncf, cuenta.tipo_ncf, cuenta.rnc_cliente);
 
         Swal.fire({
           icon: 'success',
@@ -328,7 +354,7 @@ export class BillSplitComponent implements OnInit {
     return modificadores.map(m => m.nombre).join(', ');
   }
 
-  private abrirTicketEnNavegador(formaPago: string): void {
+  private abrirTicketEnNavegador(formaPago: string, ncf?: string | null, tipoNcf?: string, rncCliente?: string): void {
     if (!this.orden) return;
     const itemsHTML = (this.orden.items || [])
       .filter(i => i.estado !== 'cancelado')
@@ -336,6 +362,18 @@ export class BillSplitComponent implements OnInit {
       .join('');
     const propina = this.propinaGlobal;
     const total = (this.totalOrden + propina).toFixed(2);
+
+    const ncfSection = ncf ? `
+<div class="divider"></div>
+<p style="font-weight:bold;text-align:center;font-size:11px;">COMPROBANTE FISCAL</p>
+<p style="text-align:center;font-size:11px;">Tipo: ${tipoNcf || ''}</p>
+<p style="text-align:center;font-size:13px;font-weight:bold;letter-spacing:1px;">${ncf}</p>
+${rncCliente ? `<p style="text-align:center;font-size:10px;">RNC: ${rncCliente}</p>` : ''}` : '';
+
+    const piePagina = ncf
+      ? `<p class="nofiscal">─── DOCUMENTO FISCAL ───</p>`
+      : `<p class="nofiscal">─── DOCUMENTO NO FISCAL ───</p>`;
+
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
 <style>
   body{font-family:monospace;width:300px;margin:0 auto;font-size:12px}
@@ -358,7 +396,9 @@ export class BillSplitComponent implements OnInit {
   ${propina > 0 ? `<tr><td>Propina</td><td style="text-align:right">RD$ ${propina.toFixed(2)}</td></tr>` : ''}
   <tr class="total"><td>TOTAL (${formaPago})</td><td style="text-align:right">RD$ ${total}</td></tr>
 </table>
-<p class="nofiscal">─── DOCUMENTO NO FISCAL ───</p>
+${ncfSection}
+<div class="divider"></div>
+${piePagina}
 <p class="nofiscal">¡Gracias por su visita!</p>
 <p class="nofiscal">${new Date().toLocaleString('es-DO')}</p>
 </body></html>`;

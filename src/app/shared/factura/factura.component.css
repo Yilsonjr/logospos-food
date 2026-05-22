@@ -213,34 +213,52 @@
 
 /* PRINT RULES */
 @media print {
-    body * {
-        visibility: hidden;
+    /* Ocultar todo excepto la factura */
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: white !important;
     }
+
+    body > * { visibility: hidden; }
 
     #print-section,
     #print-section * {
-        visibility: visible;
+        visibility: visible !important;
     }
 
+    /* Posicionar la factura ocupando todo el ancho de papel */
     #print-section {
-        position: absolute;
-        left: 0;
+        position: fixed;
         top: 0;
+        left: 0;
         width: 100%;
-        margin: 0;
-        padding: 0;
+        padding: 3mm;
+        box-sizing: border-box;
+        background: white;
     }
 
-    .no-print {
+    /* El contenedor ocupa todo el ancho disponible del papel */
+    #print-section .receipt-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        font-size: 11px !important;
+    }
+
+    /* Ocultar controles de UI */
+    .no-print,
+    .modal-actions,
+    .factura-simulation-overlay > *:not(.factura-modal),
+    .btn-print,
+    .btn-close-custom {
         display: none !important;
     }
 
-    /* Specific formats for physical paper */
+    /* Tamaño de hoja: usar el paper size configurado en el diálogo de impresión.
+       Para impresoras térmicas seleccionar 80mm o 58mm en el diálogo del navegador. */
     @page {
-        margin: 0;
+        size: auto;
+        margin: 0mm;
     }
-
-    .receipt-container.format-80mm { width: 80mm; max-width: 80mm; }
-    .receipt-container.format-58mm { width: 58mm; max-width: 58mm; }
-    .receipt-container.format-a4 { width: 100%; padding: 15mm; }
 }

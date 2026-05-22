@@ -4,7 +4,7 @@ import { SupabaseService } from './supabase.service';
 import {
   RestaurantOrder, RestaurantOrderItem, OrderWithItems,
   CrearOrden, AgregarItemOrden, KitchenTicketItem,
-  EstadoOrden, MenuCategory, MenuItem, MenuItemModifier
+  EstadoOrden, MenuCategory, MenuItem, MenuItemModifier, TipoOrden
 } from '../models/restaurant.models';
 
 @Injectable({ providedIn: 'root' })
@@ -324,6 +324,23 @@ export class RestaurantOrdersService {
   async cancelarOrden(orderId: string): Promise<void> {
     await this.actualizarEstadoOrden(orderId, 'cancelada');
     console.log('[RestaurantOrdersService] Orden cancelada:', orderId);
+  }
+
+  /** Carga órdenes activas de barra / llevar / delivery para la cola de espera */
+  async cargarOrdenesPendientes(tipos: TipoOrden[] = ['barra', 'llevar', 'delivery']): Promise<RestaurantOrder[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('restaurant_orders')
+      .select(`
+        *,
+        items:restaurant_order_items(id, cantidad, estado, menu_item:menu_items(nombre))
+      `)
+      .eq('negocio_id', this.negocioId)
+      .in('tipo_orden', tipos)
+      .not('estado', 'in', '("cerrada","cancelada")')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
   }
 
   async obtenerHistorial(limite = 50): Promise<RestaurantOrder[]> {

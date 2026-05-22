@@ -5,13 +5,36 @@
     <div class="order-modal-header">
       <div>
         <h5 class="mb-0">
-          <i class="bi bi-table me-2"></i>Mesa {{ mesa.numero_mesa }}
-          @if (mesa.zona) { <small class="text-muted fw-normal">— {{ mesa.zona.nombre }}</small> }
+          @switch (tipoOrden) {
+            @case ('mesa') {
+              <i class="bi bi-table me-2"></i>Mesa {{ mesa?.numero_mesa ?? '' }}
+              @if (mesa?.zona?.nombre) { <small class="text-muted fw-normal">— {{ mesa?.zona?.nombre }}</small> }
+            }
+            @case ('barra') {
+              <i class="bi bi-lightning-fill me-2 text-warning"></i>Venta Rápida
+              @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
+            }
+            @case ('llevar') {
+              <i class="bi bi-bag me-2"></i>Para Llevar
+              @if (clienteNombre) { <small class="text-light opacity-75 ms-1">— {{ clienteNombre }}</small> }
+              @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
+            }
+            @case ('delivery') {
+              <i class="bi bi-bicycle me-2 text-info"></i>Delivery
+              @if (clienteNombre) { <small class="text-light opacity-75 ms-1">— {{ clienteNombre }}</small> }
+              @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
+            }
+          }
         </h5>
         @if (orden) {
           <small class="text-light opacity-75">
             Orden #{{ orden.id.slice(0,8).toUpperCase() }} ·
             {{ orden.cantidad_comensales }} comensal(es)
+          </small>
+        }
+        @if ((tipoOrden === 'llevar' || tipoOrden === 'delivery') && clienteTelefono) {
+          <small class="text-light opacity-75 d-block">
+            <i class="bi bi-telephone me-1"></i>{{ clienteTelefono }}
           </small>
         }
       </div>
@@ -195,8 +218,8 @@
       <!-- COL 3: Carrito + Orden -->
       <div class="col-carrito">
 
-        <!-- Comensales (si es orden nueva) -->
-        @if (!orden) {
+        <!-- Comensales (solo para mesa/barra) -->
+        @if (!orden && tipoOrden !== 'llevar' && tipoOrden !== 'delivery') {
           <div class="mb-3">
             <label class="small text-muted">Comensales:</label>
             <div class="cantidad-control">

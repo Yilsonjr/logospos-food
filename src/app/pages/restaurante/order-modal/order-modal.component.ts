@@ -6,7 +6,7 @@ import { PrintService } from '../../../services/print.service';
 import {
   TableWithOrder, MenuCategory, MenuItem, MenuItemModifier,
   CartItem, ModificadorSeleccionado, RestaurantOrder,
-  AgregarItemOrden, OrderWithItems
+  AgregarItemOrden, OrderWithItems, TipoOrden, CrearOrden
 } from '../../../models/restaurant.models';
 import Swal from 'sweetalert2';
 
@@ -19,7 +19,12 @@ import Swal from 'sweetalert2';
 })
 export class OrderModalComponent implements OnInit, OnDestroy {
 
-  @Input() mesa!: TableWithOrder;
+  @Input() mesa: TableWithOrder | null = null;
+  @Input() tipoOrden: TipoOrden = 'mesa';
+  @Input() clienteNombre = '';
+  @Input() clienteTelefono = '';
+  @Input() direccionEntrega = '';
+  @Input() orderId?: string;
   @Output() cerrar = new EventEmitter<void>();
   @Output() ordenActualizada = new EventEmitter<void>();
   @Output() cobrar = new EventEmitter<string>();
@@ -53,11 +58,19 @@ export class OrderModalComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.cargando = true;
     try {
-      const [orden, categorias, todasLasCategorias] = await Promise.all([
-        this.ordersService.obtenerOrdenActivaDeMesa(this.mesa.id),
+      const [categorias, todasLasCategorias] = await Promise.all([
         this.ordersService.cargarCategorias(),
         this.ordersService.cargarTodoElMenu()
       ]);
+
+      // Load existing order by ID (barra/llevar reopen) or by mesa (table orders)
+      let orden: OrderWithItems | null = null;
+      if (this.orderId) {
+        orden = await this.ordersService.obtenerOrdenPorId(this.orderId);
+      } else if (this.mesa && this.tipoOrden === 'mesa') {
+        orden = await this.ordersService.obtenerOrdenActivaDeMesa(this.mesa.id);
+      }
+
       this.orden = orden;
       this.categorias = categorias;
       this.cantidadComensales = orden?.cantidad_comensales || 1;
@@ -216,12 +229,17 @@ export class OrderModalComponent implements OnInit, OnDestroy {
         const meseroId: number | null = usuarioData.id ?? null;
         const negocioId = localStorage.getItem('logos_negocio_id') || '';
 
-        this.orden = await this.ordersService.crearOrden({
+        const datosOrden: CrearOrden = {
           negocio_id: negocioId,
-          table_id: this.mesa.id,
+          table_id: this.mesa?.id ?? null,
           mesero_id: meseroId,
-          cantidad_comensales: this.cantidadComensales
-        }) as any;
+          cantidad_comensales: this.cantidadComensales,
+          tipo_orden: this.tipoOrden,
+        };
+        if (this.clienteNombre) datosOrden.cliente_nombre = this.clienteNombre;
+        if (this.clienteTelefono) datosOrden.cliente_telefono = this.clienteTelefono;
+        if (this.direccionEntrega) datosOrden.direccion_entrega = this.direccionEntrega;
+        this.orden = await this.ordersService.crearOrden(datosOrden) as any;
       }
 
       // Insertar items
@@ -270,7 +288,7 @@ export class OrderModalComponent implements OnInit, OnDestroy {
       try {
         const usuarioData = JSON.parse(localStorage.getItem('logos_usuario') || '{}');
         const mesero = usuarioData.nombre || usuarioData.email || 'Mesero';
-        const numeroMesa = this.mesa?.numero_mesa || (this.orden as any).numero_mesa || 0;
+        const numeroMesa = this.mesa?.numero_mesa || (this.orden as any)?.numero_pedido_dia || 0;
         const resultado = await this.printService.imprimirOrden(this.orden.id, numeroMesa, mesero);
         if (resultado.errores.length > 0) {
           console.warn('[OrderModal] Errores de impresión:', resultado.errores);
@@ -394,6 +412,10 @@ export class OrderModalComponent implements OnInit, OnDestroy {
     return Array.from({ length: this.cantidadComensales }, (_, i) => i + 1);
   }
 
+  get numeroPedidoDia(): number | null {
+    return (this.orden as any)?.numero_pedido_dia ?? null;
+  }
+
   trackByItem(_: number, i: CartItem): string { return i.menu_item.id; }
   trackByCat(_: number, c: MenuCategory): string { return c.id; }
   trackByMenuItem(_: number, m: MenuItem): string { return m.id; }
@@ -408,6 +430,18 @@ export class OrderModalComponent implements OnInit, OnDestroy {
     const itemsHTML = this.itemsPersistidos
       .map(i => `<tr><td>${i.cantidad}× ${i.menu_item?.nombre || 'Item'}</td><td style="text-align:right">RD$ ${(i.subtotal || 0).toFixed(2)}</td></tr>`)
       .join('');
+
+    let identificador: string;
+    const np = (this.orden as any).numero_pedido_dia;
+    if (this.tipoOrden === 'mesa') {
+      identificador = `Mesa ${this.orden.mesa?.numero_mesa || '-'}`;
+    } else if (this.tipoOrden === 'barra') {
+      identificador = np ? `Pedido #${np}` : 'Venta Rápida';
+    } else {
+      const label = this.tipoOrden === 'delivery' ? 'Delivery' : 'Para Llevar';
+      identificador = `${label}${np ? ` #${np}` : ''}${this.clienteNombre ? ` | ${this.clienteNombre}` : ''}`;
+    }
+
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Pre-Cuenta</title>
 <style>
   body{font-family:monospace;width:300px;margin:0 auto;font-size:12px}
@@ -420,7 +454,7 @@ export class OrderModalComponent implements OnInit, OnDestroy {
 </style></head><body>
 <h2>PRE-CUENTA</h2>
 <p>─────────────────────────</p>
-<p>Mesa ${this.orden.mesa?.numero_mesa || '-'} &nbsp;|&nbsp; Orden #${this.orden.id.slice(-6).toUpperCase()}</p>
+<p>${identificador} &nbsp;|&nbsp; Orden #${this.orden.id.slice(-6).toUpperCase()}</p>
 <div class="divider"></div>
 <table>${itemsHTML}</table>
 <div class="divider"></div>

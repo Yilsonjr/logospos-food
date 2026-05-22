@@ -73,3 +73,5 @@ database/rpc_ventas_fiscal.sql
 print-agent/instalar-servicio.ps1
 .gitignore
 print-agent/INSTALAR-EN-NEGOCIO.md
+database/restaurant/08_fiscal_order_payments.sql
+.gitignore

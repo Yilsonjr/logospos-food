@@ -14,6 +14,9 @@ export type EstadoMesa = 'libre' | 'ocupada' | 'reservada' | 'limpieza' | 'bloqu
 /** Ciclo de vida de una orden */
 export type EstadoOrden = 'abierta' | 'en_cocina' | 'lista' | 'pagando' | 'cerrada' | 'cancelada';
 
+/** Tipo de orden del restaurante */
+export type TipoOrden = 'mesa' | 'barra' | 'llevar' | 'delivery';
+
 /** Estado de un item individual dentro de una orden */
 export type EstadoItemOrden = 'pendiente' | 'en_preparacion' | 'listo' | 'entregado' | 'cancelado';
 
@@ -128,9 +131,10 @@ export interface MenuItemModifier {
 export interface RestaurantOrder {
   id: string;
   negocio_id: string;
-  table_id: string;
+  table_id: string | null;
   mesero_id?: number | null;
   estado: EstadoOrden;
+  tipo_orden?: TipoOrden;
   cantidad_comensales: number;
   subtotal: number;
   impuesto: number;
@@ -138,6 +142,10 @@ export interface RestaurantOrder {
   total: number;
   propina: number;
   notas_generales?: string | null;
+  cliente_nombre?: string | null;
+  cliente_telefono?: string | null;
+  direccion_entrega?: string | null;
+  numero_pedido_dia?: number | null;
   hora_apertura: string;
   hora_envio_cocina?: string | null;
   hora_cierre?: string | null;
@@ -188,7 +196,7 @@ export interface KitchenTicket {
   id: string;
   negocio_id: string;
   order_id: string;
-  table_id: string;
+  table_id: string | null;
   numero_mesa: number;
   items: KitchenTicketItem[];
   estado: EstadoTicketCocina;
@@ -353,10 +361,14 @@ export interface CartItem {
 /** Datos para crear una nueva orden */
 export interface CrearOrden {
   negocio_id: string;
-  table_id: string;
+  table_id: string | null;
   mesero_id: number | null;
   cantidad_comensales: number;
+  tipo_orden?: TipoOrden;
   notas_generales?: string;
+  cliente_nombre?: string;
+  cliente_telefono?: string;
+  direccion_entrega?: string;
 }
 
 /** Datos para agregar un item a una orden existente */
@@ -379,6 +391,11 @@ export interface CuentaComensal {
   total: number;
   forma_pago: FormaPago;
   pagado: boolean;
+  // Comprobante fiscal (NCF) — solo si el negocio tiene modo_fiscal activo
+  requiere_comprobante?: boolean;
+  tipo_ncf?: string;
+  rnc_cliente?: string;
+  nombre_cliente_fiscal?: string;
 }
 
 // ============================================================

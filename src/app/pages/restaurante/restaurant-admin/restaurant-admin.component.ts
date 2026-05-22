@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { NegociosService } from '../../../services/negocios.service';
 import { PrintersAdminComponent } from '../printers-admin/printers-admin.component';
 import { PrintService } from '../../../services/print.service';
 import { AuthService } from '../../../services/auth.service';
+import { SupabaseService } from '../../../services/supabase.service';
 import {
   RestaurantZone, RestaurantTable, MenuCategory, MenuItem,
   RestaurantInventoryItem, RestaurantInventoryMovement, TipoMovimientoInventario,
@@ -25,7 +26,12 @@ type Tab = 'zonas' | 'mesas' | 'categorias' | 'platos' | 'inventario' | 'compras
   templateUrl: './restaurant-admin.component.html',
   styleUrl: './restaurant-admin.component.css'
 })
-export class RestaurantAdminComponent implements OnInit {
+export class RestaurantAdminComponent implements OnInit, OnDestroy {
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.mostrarFormPlato) this.mostrarFormPlato = false;
+  }
 
   tabActiva: Tab = 'zonas';
   cargando = false;
@@ -78,6 +84,7 @@ export class RestaurantAdminComponent implements OnInit {
     { grupo_nombre: '', nombre: '', precio_adicional: 0, obligatorio: false, max_seleccion: 1 };
   guardandoMod = false;
   cargandoMods = false;
+  subiendoImagen = false;
 
   // ── Inventario ────────────────────────────────────────────
   inventarioItems: RestaurantInventoryItem[] = [];
@@ -136,12 +143,15 @@ export class RestaurantAdminComponent implements OnInit {
     private negociosService: NegociosService,
     private printService: PrintService,
     private authService: AuthService,
+    private supabaseService: SupabaseService,
     private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarTab(this.primeraTabAccesible);
   }
+
+  ngOnDestroy(): void { }
 
   /** Devuelve true si el usuario puede ver el tab dado.
    *  Lógica: super admin siempre puede (tienePermiso lo maneja).
@@ -457,6 +467,62 @@ export class RestaurantAdminComponent implements OnInit {
     try {
       await this.ordersService.eliminarModificador(modId);
       await this.cargarModificadores(this.editandoPlato.id);
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    }
+  }
+
+  async subirImagenPlato(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    this.subiendoImagen = true;
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg';
+      const nombre = `platos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await this.supabaseService.client.storage
+        .from('menu-images')
+        .upload(nombre, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data: urlData } = this.supabaseService.client.storage
+        .from('menu-images')
+        .getPublicUrl(nombre);
+      this.platoForm.imagen_url = urlData.publicUrl;
+    } catch (e: any) {
+      Swal.fire('Error al subir imagen', e.message ?? 'Verifica que el bucket "menu-images" exista en Supabase Storage.', 'error');
+    } finally {
+      this.subiendoImagen = false;
+      input.value = '';
+    }
+  }
+
+  async toggleDisponiblePlato(plato: MenuItem): Promise<void> {
+    const nuevoEstado = !plato.disponible;
+    plato.disponible = nuevoEstado; // optimista
+    try {
+      await this.ordersService.actualizarMenuItem(plato.id, { disponible: nuevoEstado });
+    } catch (e: any) {
+      plato.disponible = !nuevoEstado; // revertir
+      Swal.fire('Error', e.message, 'error');
+    }
+  }
+
+  async duplicarPlato(plato: MenuItem): Promise<void> {
+    try {
+      await this.ordersService.crearMenuItem({
+        categoria_id: plato.categoria_id,
+        nombre: `${plato.nombre} (copia)`,
+        descripcion: plato.descripcion,
+        precio: plato.precio,
+        costo_estimado: plato.costo_estimado ?? null,
+        tiempo_preparacion_minutos: plato.tiempo_preparacion_minutos,
+        notas_cocina: plato.notas_cocina,
+        requiere_inventario: false,
+        enviar_a_cocina: plato.enviar_a_cocina,
+        disponible: false
+      });
+      await this.cargarTab('platos');
+      Swal.fire({ icon: 'success', title: 'Plato duplicado', text: 'Revísalo y ajusta el precio si es necesario.', timer: 2000, showConfirmButton: false });
     } catch (e: any) {
       Swal.fire('Error', e.message, 'error');
     }

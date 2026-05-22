@@ -299,9 +299,358 @@
 
   <!-- ══════════ TAB: PLATOS ══════════ -->
   @if (!cargando && tabActiva === 'platos') {
+
+    <!-- ══ DRAWER: FORM DE PLATO (panel lateral fijo) ══ -->
+    @if (mostrarFormPlato) {
+      <!-- Overlay -->
+      <div class="plato-drawer-overlay" (click)="mostrarFormPlato=false"></div>
+      <!-- Panel -->
+      <div class="plato-drawer">
+
+        <div class="plato-form-card" style="height:100%;border:none;border-radius:0;box-shadow:none;display:flex;flex-direction:column">
+
+          <!-- Form header -->
+          <div class="plato-form-header">
+            <div class="d-flex align-items-center gap-3">
+              <div class="plato-form-icon">
+                <i class="bi bi-{{ editandoPlato ? 'pencil-fill' : 'plus-lg' }}"></i>
+              </div>
+              <div>
+                <div class="plato-form-title">
+                  {{ editandoPlato ? (platoForm.nombre || 'Editar Plato') : 'Nuevo Plato' }}
+                </div>
+                <div class="plato-form-subtitle">
+                  {{ editandoPlato ? 'Modificando plato del menú' : 'Completa los datos del nuevo plato' }}
+                </div>
+              </div>
+            </div>
+            <button class="plato-form-close" (click)="mostrarFormPlato=false" title="Cerrar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <!-- Two-column body -->
+          <div class="plato-form-body">
+
+            <!-- ── COLUMNA IZQUIERDA: Imagen + Categoría ── -->
+            <div class="plato-form-left">
+              <div class="pf-section-label mb-2"><i class="bi bi-image-fill"></i> Imagen</div>
+
+              <!-- Zona de imagen -->
+              <div class="plato-img-zone">
+                @if (platoForm.imagen_url) {
+                  <img [src]="platoForm.imagen_url" alt="imagen" class="plato-img-zone-thumb"
+                    onerror="this.parentElement.classList.add('piz-no-img')">
+                  <button class="plato-img-zone-clear" (click)="platoForm.imagen_url=null" title="Quitar imagen">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                } @else {
+                  <div class="plato-img-zone-placeholder">
+                    <i class="bi bi-egg-fried"></i>
+                    <span>Sin imagen</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Upload controls -->
+              <div class="plato-img-upload-row mt-2">
+                <input class="form-control form-control-sm" [(ngModel)]="platoForm.imagen_url"
+                  placeholder="URL de imagen…">
+                <label class="ra-upload-btn" [class.uploading]="subiendoImagen" title="Subir desde dispositivo">
+                  @if (subiendoImagen) {
+                    <span class="spinner-border spinner-border-sm"></span>
+                  } @else {
+                    <i class="bi bi-upload"></i>
+                  }
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                    style="display:none" (change)="subirImagenPlato($event)" [disabled]="subiendoImagen">
+                </label>
+              </div>
+
+              <!-- Categoría -->
+              <div class="mt-3">
+                <div class="pf-section-label mb-1"><i class="bi bi-tags-fill"></i> Categoría</div>
+                <select class="form-select form-select-sm" [(ngModel)]="platoForm.categoria_id">
+                  @for (cat of categorias; track cat.id) {
+                    <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <!-- ── COLUMNA DERECHA: Campos ── -->
+            <div class="plato-form-right">
+
+              <!-- Sección: Información -->
+              <div class="pf-section">
+                <div class="pf-section-label"><i class="bi bi-info-circle-fill"></i> Información básica</div>
+                <div class="row g-2">
+                  <div class="col-12">
+                    <label class="ra-label">Nombre del plato *</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="platoForm.nombre"
+                      placeholder="Ej: Pollo a la plancha">
+                  </div>
+                  <div class="col-12">
+                    <label class="ra-label">Descripción</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="platoForm.descripcion"
+                      placeholder="Ingredientes, acompañantes…">
+                  </div>
+                  <div class="col-12">
+                    <label class="ra-label">Notas para cocina</label>
+                    <input class="form-control form-control-sm" [(ngModel)]="platoForm.notas_cocina"
+                      placeholder="Instrucciones especiales de preparación…">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sección: Precio y tiempo -->
+              <div class="pf-section">
+                <div class="pf-section-label"><i class="bi bi-cash-stack"></i> Precio y tiempo</div>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <label class="ra-label">Precio (RD$) *</label>
+                    <input type="number" class="form-control form-control-sm pf-precio-input"
+                      [(ngModel)]="platoForm.precio" min="0">
+                  </div>
+                  <div class="col-6">
+                    <label class="ra-label">
+                      Costo estimado
+                      <span class="text-muted" style="font-size:.68rem" title="Para calcular margen bruto. Opcional si usas recetas.">(?)</span>
+                    </label>
+                    <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.costo_estimado"
+                      min="0" step="0.01" placeholder="0.00">
+                  </div>
+                  <div class="col-6">
+                    <label class="ra-label">Tiempo prep. (min)</label>
+                    <input type="number" class="form-control form-control-sm"
+                      [(ngModel)]="platoForm.tiempo_preparacion_minutos" min="0">
+                  </div>
+                  @if ((platoForm.costo_estimado ?? 0) > 0 && platoForm.precio > 0) {
+                    <div class="col-6 d-flex align-items-end pb-1">
+                      <div class="pf-margen-badge">
+                        <i class="bi bi-graph-up-arrow me-1"></i>
+                        Margen: {{ ((platoForm.precio - (platoForm.costo_estimado ?? 0)) / platoForm.precio * 100) | number:'1.0-0' }}%
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Sección: Opciones / toggles -->
+              <div class="pf-section">
+                <div class="pf-section-label"><i class="bi bi-toggles"></i> Configuración</div>
+                <div class="pf-toggles">
+                  <label class="pf-toggle-item">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="platoForm.disponible">
+                    <span class="pf-toggle-label">
+                      <span class="pf-toggle-title">Disponible</span>
+                      <span class="pf-toggle-hint">Se muestra en el menú al tomar órdenes</span>
+                    </span>
+                  </label>
+                  <label class="pf-toggle-item">
+                    <input class="form-check-input" type="checkbox" [(ngModel)]="platoForm.enviar_a_cocina">
+                    <span class="pf-toggle-label">
+                      <span class="pf-toggle-title">Enviar a cocina (KDS)</span>
+                      <span class="pf-toggle-hint">Desactivar para bebidas y snacks</span>
+                    </span>
+                  </label>
+                  @if (usaInventario) {
+                    <label class="pf-toggle-item">
+                      <input class="form-check-input" type="checkbox"
+                        [(ngModel)]="platoForm.requiere_inventario"
+                        (ngModelChange)="onToggleRequiereInventario()">
+                      <span class="pf-toggle-label">
+                        <span class="pf-toggle-title">Rebaja inventario</span>
+                        <span class="pf-toggle-hint">Descuenta insumos al vender este plato</span>
+                      </span>
+                    </label>
+                  }
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Footer de acciones -->
+          <div class="plato-form-footer">
+            <button class="ra-btn-cancel" (click)="mostrarFormPlato=false">Cancelar</button>
+            <button class="ra-btn-save" (click)="guardarPlato()">
+              <i class="bi bi-check-lg"></i> Guardar plato
+            </button>
+          </div>
+        </div>
+
+        <!-- ── Paneles adicionales (solo al editar) ── -->
+        @if (editandoPlato) {
+
+          <!-- Panel de receta -->
+          @if (usaInventario && platoForm.requiere_inventario) {
+            <div class="ra-receta-panel mb-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-journal-text text-primary"></i>
+                <span class="fw-bold small">Ingredientes de la receta</span>
+              </div>
+              @if (receta.length > 0) {
+                <table class="table table-sm table-bordered mb-2">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Insumo</th>
+                      <th class="text-center" style="width:90px">Cantidad</th>
+                      <th style="width:90px">Unidad</th>
+                      <th style="width:40px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (ing of receta; track $index) {
+                      <tr>
+                        <td>{{ ing._nombre || nombreInsumo(ing.inventory_item_id) }}</td>
+                        <td class="text-center">{{ ing.cantidad_requerida }}</td>
+                        <td class="text-muted small">{{ ing.unidad_medida }}</td>
+                        <td class="text-center">
+                          <button class="btn btn-sm p-0 text-danger" (click)="quitarIngredienteReceta($index)">
+                            <i class="bi bi-trash3"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              } @else {
+                <p class="text-muted small">Sin ingredientes asignados aún.</p>
+              }
+              <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
+                <div style="flex:2;min-width:150px">
+                  <label class="ra-label">Insumo</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="recetaItemForm.inventory_item_id">
+                    <option value="">— Seleccionar insumo —</option>
+                    @for (inv of inventarioItems; track inv.id) {
+                      <option [value]="inv.id">{{ inv.nombre }} ({{ inv.unidad_medida }})</option>
+                    }
+                  </select>
+                </div>
+                <div style="flex:1;min-width:80px">
+                  <label class="ra-label">Cantidad</label>
+                  <input type="number" class="form-control form-control-sm"
+                    min="0.001" step="0.001" [(ngModel)]="recetaItemForm.cantidad_requerida">
+                </div>
+                <button class="btn btn-outline-primary btn-sm" (click)="agregarIngredienteReceta()">
+                  <i class="bi bi-plus-circle"></i> Agregar
+                </button>
+              </div>
+              <button class="btn btn-primary btn-sm" (click)="guardarRecetaPlato()" [disabled]="guardandoReceta">
+                @if (guardandoReceta) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="bi bi-save"></i> Guardar receta
+              </button>
+            </div>
+          }
+
+          <!-- Panel modificadores -->
+          <div class="ra-mods-panel mb-4">
+            <div class="ra-mods-header">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-sliders2 text-primary"></i>
+                <span class="fw-semibold small">Acompañantes y Opciones</span>
+                @if (modificadores.length > 0) {
+                  <span class="badge bg-primary rounded-pill">{{ modificadores.length }}</span>
+                }
+              </div>
+              <span class="text-muted" style="font-size:.72rem">Papa frita, Salsa, Tamaño, etc.</span>
+            </div>
+            @if (cargandoMods) {
+              <div class="text-muted small mt-2">
+                <span class="spinner-border spinner-border-sm me-1"></span> Cargando…
+              </div>
+            } @else if (modificadoresPorGrupo.length > 0) {
+              <div class="mod-grupos-list mt-2">
+                @for (grupo of modificadoresPorGrupo; track grupo.grupo) {
+                  <div class="mod-grupo-admin">
+                    <div class="mod-grupo-admin-label">
+                      <i class="bi bi-collection-fill me-1"></i>{{ grupo.grupo }}
+                      <span class="text-muted ms-1" style="font-size:.7rem">
+                        · {{ grupo.items[0]?.obligatorio ? 'Requerido' : 'Opcional' }}
+                        @if ((grupo.items[0]?.max_seleccion ?? 0) > 1) {
+                          · Máx {{ grupo.items[0]?.max_seleccion }}
+                        } @else {
+                          · Elige 1
+                        }
+                      </span>
+                    </div>
+                    <div class="mod-chips-admin">
+                      @for (mod of grupo.items; track mod.id) {
+                        <div class="mod-chip-admin">
+                          <span class="mod-chip-nombre">{{ mod.nombre }}</span>
+                          @if (mod.precio_adicional > 0) {
+                            <span class="mod-chip-extra">+RD${{ mod.precio_adicional }}</span>
+                          }
+                          <button class="mod-chip-del" (click)="eliminarModificador(mod.id)" title="Eliminar">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-muted small mb-0 mt-2">
+                <i class="bi bi-lightbulb me-1 text-warning"></i>Sin opciones aún. Agrega guarniciones, salsas, tamaños…
+              </p>
+            }
+            <div class="mod-add-form mt-2">
+              <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-3">
+                  <label class="ra-label">Grupo</label>
+                  <input class="form-control form-control-sm" list="grupos-exist"
+                    [(ngModel)]="modForm.grupo_nombre" placeholder="Guarnición, Salsa, Tamaño…">
+                  <datalist id="grupos-exist">
+                    @for (g of modGruposUnicos; track g) { <option [value]="g"></option> }
+                  </datalist>
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="ra-label">Opción</label>
+                  <input class="form-control form-control-sm" [(ngModel)]="modForm.nombre"
+                    placeholder="Papa frita, Arroz, Pequeño…">
+                </div>
+                <div class="col-6 col-md-2">
+                  <label class="ra-label">Extra (RD$)</label>
+                  <input type="number" class="form-control form-control-sm"
+                    [(ngModel)]="modForm.precio_adicional" min="0" step="0.5" placeholder="0">
+                </div>
+                <div class="col-4 col-md-2">
+                  <label class="ra-label">Máx.</label>
+                  <input type="number" class="form-control form-control-sm"
+                    [(ngModel)]="modForm.max_seleccion" min="1" max="10">
+                </div>
+                <div class="col-auto d-flex align-items-end gap-2 pb-1">
+                  <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" id="chkModObl" [(ngModel)]="modForm.obligatorio">
+                    <label class="form-check-label ra-label mb-0" for="chkModObl">Req.</label>
+                  </div>
+                  <button class="btn btn-primary btn-sm px-3" (click)="agregarModificador()"
+                    [disabled]="guardandoMod || !modForm.grupo_nombre.trim() || !modForm.nombre.trim()">
+                    @if (guardandoMod) { <span class="spinner-border spinner-border-sm"></span> }
+                    @else { <i class="bi bi-plus-lg"></i> Agregar }
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        }
+      </div>
+    }
+
+    <!-- ════════════════════════════════════════
+         CARD: Header + grid de platos
+         ════════════════════════════════════════ -->
     <div class="ra-card">
       <div class="ra-card-header">
-        <h6 class="ra-section-title"><i class="bi bi-egg-fried"></i> Platos del Menú</h6>
+        <h6 class="ra-section-title">
+          <i class="bi bi-egg-fried"></i> Platos del Menú
+          @if (platos.length > 0) {
+            <span class="badge bg-secondary ms-2" style="font-size:.7rem;font-weight:500">{{ platos.length }}</span>
+          }
+        </h6>
         <div class="d-flex gap-2 align-items-center">
           <select class="form-select form-select-sm" style="width:180px"
             [(ngModel)]="categoriaFiltroPlatos" (change)="filtrarPlatos()">
@@ -320,341 +669,75 @@
         <div class="ra-empty">⚠️ Primero crea <strong>Categorías</strong> en la pestaña anterior.</div>
       }
 
-      @if (mostrarFormPlato) {
-        <div class="ra-form mb-3">
-          <h6 class="ra-form-title">{{ editandoPlato ? 'Editar' : 'Nuevo' }} Plato</h6>
-          <div class="row g-2">
-            <div class="col-md-3">
-              <label class="ra-label">Categoría *</label>
-              <select class="form-select form-select-sm" [(ngModel)]="platoForm.categoria_id">
-                @for (cat of categorias; track cat.id) {
-                  <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
+      @if (platos.length === 0 && categorias.length > 0) {
+        <div class="ra-empty mt-2">Sin platos aún. Usa <strong>Nuevo Plato</strong> para empezar.</div>
+      }
+
+      @if (platos.length > 0) {
+        <div class="platos-grid">
+          @for (plato of platos; track trackById($index, plato)) {
+            <div class="plato-card" [class.plato-card-off]="!plato.disponible">
+
+              <!-- Imagen -->
+              <div class="plato-card-img">
+                @if (plato.imagen_url) {
+                  <img [src]="plato.imagen_url" [alt]="plato.nombre"
+                    onerror="this.style.display='none'">
                 }
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="ra-label">Nombre del plato *</label>
-              <input class="form-control form-control-sm" [(ngModel)]="platoForm.nombre" placeholder="Ej: Pollo a la plancha">
-            </div>
-            <div class="col-md-2">
-              <label class="ra-label">Precio (RD$)</label>
-              <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.precio" min="0">
-            </div>
-            <div class="col-md-2">
-              <label class="ra-label">
-                Costo estimado
-                <span class="text-muted" style="font-size:.7rem" title="Costo por unidad para calcular margen. Opcional si usas recetas.">(?)</span>
-              </label>
-              <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.costo_estimado"
-                min="0" step="0.01" placeholder="0.00">
-            </div>
-            <div class="col-md-2">
-              <label class="ra-label">Tiempo prep. (min)</label>
-              <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.tiempo_preparacion_minutos" min="0">
-            </div>
-            <div class="col-md-5">
-              <label class="ra-label">Descripción</label>
-              <input class="form-control form-control-sm" [(ngModel)]="platoForm.descripcion" placeholder="Ingredientes, acompañantes…">
-            </div>
-            <div class="col-md-5">
-              <label class="ra-label">Notas para cocina</label>
-              <input class="form-control form-control-sm" [(ngModel)]="platoForm.notas_cocina" placeholder="Instrucciones de preparación…">
-            </div>
-            <div class="col-md-2">
-              <label class="ra-label">Imagen (URL)</label>
-              <input class="form-control form-control-sm" [(ngModel)]="platoForm.imagen_url"
-                placeholder="https://…">
-            </div>
-            @if (platoForm.imagen_url) {
-              <div class="col-12">
-                <div class="plato-img-preview">
-                  <img [src]="platoForm.imagen_url" alt="preview"
-                    onerror="this.style.display='none'" />
-                  <button class="plato-img-clear" (click)="platoForm.imagen_url=null" title="Quitar imagen">
-                    <i class="bi bi-x-lg"></i>
-                  </button>
-                </div>
-              </div>
-            }
-            <div class="col-12 d-flex gap-4 align-items-center pt-1 flex-wrap">
-              <div class="form-check form-switch mb-0">
-                <input class="form-check-input" type="checkbox" id="chkDisponible"
-                  [(ngModel)]="platoForm.disponible">
-                <label class="form-check-label ra-label mb-0" for="chkDisponible">Disponible</label>
-              </div>
-              <div class="form-check form-switch mb-0">
-                <input class="form-check-input" type="checkbox" id="chkEnviarCocina"
-                  [(ngModel)]="platoForm.enviar_a_cocina">
-                <label class="form-check-label ra-label mb-0" for="chkEnviarCocina">
-                  Enviar a cocina (KDS)
-                  <span class="text-muted" style="font-size:.7rem">· desactivar para bebidas/snacks</span>
-                </label>
-              </div>
-              @if (usaInventario) {
-                <div class="form-check form-switch mb-0">
-                  <input class="form-check-input" type="checkbox" id="chkInventario"
-                    [(ngModel)]="platoForm.requiere_inventario"
-                    (ngModelChange)="onToggleRequiereInventario()">
-                  <label class="form-check-label ra-label mb-0" for="chkInventario">Rebaja inventario</label>
-                </div>
-              }
-            </div>
-          </div>
-
-          <!-- Panel de receta / ingredientes -->
-          @if (usaInventario && platoForm.requiere_inventario) {
-            <div class="ra-receta-panel mt-3">
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <i class="bi bi-journal-text text-primary"></i>
-                <span class="fw-bold small">Ingredientes de la receta</span>
-              </div>
-              @if (!editandoPlato) {
-                <p class="text-muted small mb-0">
-                  <i class="bi bi-info-circle me-1"></i>
-                  Guarda el plato primero, luego podrás asignar ingredientes.
-                </p>
-              } @else {
-                <!-- Lista de ingredientes actuales -->
-                @if (receta.length > 0) {
-                  <table class="table table-sm table-bordered mb-2">
-                    <thead class="table-light">
-                      <tr>
-                        <th>Insumo</th>
-                        <th class="text-center" style="width:90px">Cantidad</th>
-                        <th style="width:90px">Unidad</th>
-                        <th style="width:40px"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (ing of receta; track $index) {
-                        <tr>
-                          <td>{{ ing._nombre || nombreInsumo(ing.inventory_item_id) }}</td>
-                          <td class="text-center">{{ ing.cantidad_requerida }}</td>
-                          <td class="text-muted small">{{ ing.unidad_medida }}</td>
-                          <td class="text-center">
-                            <button class="btn btn-sm p-0 text-danger" (click)="quitarIngredienteReceta($index)">
-                              <i class="bi bi-trash3"></i>
-                            </button>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                } @else {
-                  <p class="text-muted small">Sin ingredientes asignados aún.</p>
-                }
-
-                <!-- Agregar nuevo ingrediente -->
-                <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
-                  <div style="flex:2;min-width:150px">
-                    <label class="ra-label">Insumo</label>
-                    <select class="form-select form-select-sm" [(ngModel)]="recetaItemForm.inventory_item_id">
-                      <option value="">— Seleccionar insumo —</option>
-                      @for (inv of inventarioItems; track inv.id) {
-                        <option [value]="inv.id">{{ inv.nombre }} ({{ inv.unidad_medida }})</option>
-                      }
-                    </select>
-                  </div>
-                  <div style="flex:1;min-width:80px">
-                    <label class="ra-label">Cantidad</label>
-                    <input type="number" class="form-control form-control-sm"
-                      min="0.001" step="0.001"
-                      [(ngModel)]="recetaItemForm.cantidad_requerida">
-                  </div>
-                  <button class="btn btn-outline-primary btn-sm" (click)="agregarIngredienteReceta()">
-                    <i class="bi bi-plus-circle"></i> Agregar
-                  </button>
-                </div>
-
-                <button class="btn btn-primary btn-sm" (click)="guardarRecetaPlato()" [disabled]="guardandoReceta">
-                  @if (guardandoReceta) {
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                  }
-                  <i class="bi bi-save"></i> Guardar receta
+                <div class="plato-card-img-ph"><i class="bi bi-egg-fried"></i></div>
+                <span class="plato-card-cat-badge">{{ nombreCategoria(plato.categoria_id) }}</span>
+                <!-- Toggle disponible rápido -->
+                <button class="plato-card-toggle"
+                  [class.plato-card-toggle-on]="plato.disponible"
+                  (click)="toggleDisponiblePlato(plato)"
+                  [title]="plato.disponible ? 'Desactivar' : 'Activar'">
+                  <i class="bi bi-{{ plato.disponible ? 'eye-fill' : 'eye-slash-fill' }}"></i>
                 </button>
-              }
+              </div>
+
+              <!-- Cuerpo -->
+              <div class="plato-card-body">
+                <div class="plato-card-nombre">{{ plato.nombre }}</div>
+                @if (plato.descripcion) {
+                  <div class="plato-card-desc">{{ plato.descripcion }}</div>
+                }
+                <div class="plato-card-meta">
+                  <span class="plato-card-precio">RD$ {{ plato.precio | number:'1.0-0' }}</span>
+                  <span class="plato-card-tiempo"><i class="bi bi-clock"></i> {{ plato.tiempo_preparacion_minutos }}m</span>
+                </div>
+                <div class="plato-card-chips">
+                  @if (plato.disponible) {
+                    <span class="pchip pchip-ok"><i class="bi bi-check2-circle"></i> Disponible</span>
+                  } @else {
+                    <span class="pchip pchip-off"><i class="bi bi-eye-slash"></i> Inactivo</span>
+                  }
+                  @if (plato.requiere_inventario && usaInventario) {
+                    <span class="pchip pchip-inv"><i class="bi bi-boxes"></i> Inventario</span>
+                  }
+                  @if (!plato.enviar_a_cocina) {
+                    <span class="pchip pchip-nokds"><i class="bi bi-cup-straw"></i> Sin KDS</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Acciones -->
+              <div class="plato-card-actions">
+                <button class="plato-card-btn-edit" (click)="abrirFormPlato(plato)" title="Editar plato">
+                  <i class="bi bi-pencil-fill"></i> Editar
+                </button>
+                <button class="plato-card-btn-dup" (click)="duplicarPlato(plato)" title="Duplicar plato">
+                  <i class="bi bi-copy"></i>
+                </button>
+                <button class="plato-card-btn-del" (click)="eliminarPlato(plato)" title="Eliminar plato">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
+              </div>
+
             </div>
           }
-
-          <!-- ── Guarniciones y Modificadores ── -->
-          <div class="ra-mods-panel mt-3">
-            <div class="ra-mods-header">
-              <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-sliders2 text-primary"></i>
-                <span class="fw-semibold small">Acompañantes y Opciones</span>
-                @if (modificadores.length > 0) {
-                  <span class="badge bg-primary rounded-pill">{{ modificadores.length }}</span>
-                }
-              </div>
-              <span class="text-muted" style="font-size:.72rem">Papa frita, Salsa, Tamaño, etc.</span>
-            </div>
-
-            @if (!editandoPlato) {
-              <p class="text-muted small mb-0 mt-2">
-                <i class="bi bi-info-circle me-1"></i>Guarda el plato primero para agregar opciones.
-              </p>
-            } @else {
-              <!-- Grupos existentes -->
-              @if (cargandoMods) {
-                <div class="text-muted small mt-2">
-                  <span class="spinner-border spinner-border-sm me-1"></span> Cargando…
-                </div>
-              } @else if (modificadoresPorGrupo.length > 0) {
-                <div class="mod-grupos-list mt-2">
-                  @for (grupo of modificadoresPorGrupo; track grupo.grupo) {
-                    <div class="mod-grupo-admin">
-                      <div class="mod-grupo-admin-label">
-                        <i class="bi bi-collection-fill me-1"></i>{{ grupo.grupo }}
-                        <span class="text-muted ms-1" style="font-size:.7rem">
-                          · {{ grupo.items[0]?.obligatorio ? 'Requerido' : 'Opcional' }}
-                          @if ((grupo.items[0]?.max_seleccion ?? 0) > 1) {
-                            · Máx {{ grupo.items[0]?.max_seleccion }}
-                          } @else {
-                            · Elige 1
-                          }
-                        </span>
-                      </div>
-                      <div class="mod-chips-admin">
-                        @for (mod of grupo.items; track mod.id) {
-                          <div class="mod-chip-admin">
-                            <span class="mod-chip-nombre">{{ mod.nombre }}</span>
-                            @if (mod.precio_adicional > 0) {
-                              <span class="mod-chip-extra">+RD${{ mod.precio_adicional }}</span>
-                            }
-                            <button class="mod-chip-del" (click)="eliminarModificador(mod.id)" title="Eliminar">
-                              <i class="bi bi-x-lg"></i>
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <p class="text-muted small mb-0 mt-2">
-                  <i class="bi bi-lightbulb me-1 text-warning"></i>Sin opciones aún. Agrega guarniciones, salsas, tamaños…
-                </p>
-              }
-
-              <!-- Formulario agregar modificador -->
-              <div class="mod-add-form mt-2">
-                <div class="row g-2 align-items-end">
-                  <div class="col-12 col-md-3">
-                    <label class="ra-label">Grupo</label>
-                    <input class="form-control form-control-sm" list="grupos-exist"
-                      [(ngModel)]="modForm.grupo_nombre"
-                      placeholder="Guarnición, Salsa, Tamaño…">
-                    <datalist id="grupos-exist">
-                      @for (g of modGruposUnicos; track g) {
-                        <option [value]="g"></option>
-                      }
-                    </datalist>
-                  </div>
-                  <div class="col-12 col-md-3">
-                    <label class="ra-label">Opción</label>
-                    <input class="form-control form-control-sm"
-                      [(ngModel)]="modForm.nombre"
-                      placeholder="Papa frita, Arroz, Pequeño…">
-                  </div>
-                  <div class="col-6 col-md-2">
-                    <label class="ra-label">Extra (RD$)</label>
-                    <input type="number" class="form-control form-control-sm"
-                      [(ngModel)]="modForm.precio_adicional" min="0" step="0.5" placeholder="0">
-                  </div>
-                  <div class="col-4 col-md-2">
-                    <label class="ra-label">Máx.</label>
-                    <input type="number" class="form-control form-control-sm"
-                      [(ngModel)]="modForm.max_seleccion" min="1" max="10">
-                  </div>
-                  <div class="col-auto d-flex align-items-end gap-2 pb-1">
-                    <div class="form-check mb-0">
-                      <input class="form-check-input" type="checkbox" id="chkModObl"
-                        [(ngModel)]="modForm.obligatorio">
-                      <label class="form-check-label ra-label mb-0" for="chkModObl">Req.</label>
-                    </div>
-                    <button class="btn btn-primary btn-sm px-3"
-                      (click)="agregarModificador()"
-                      [disabled]="guardandoMod || !modForm.grupo_nombre.trim() || !modForm.nombre.trim()">
-                      @if (guardandoMod) {
-                        <span class="spinner-border spinner-border-sm"></span>
-                      } @else {
-                        <i class="bi bi-plus-lg"></i> Agregar
-                      }
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-
-          <div class="d-flex gap-2 mt-3">
-            <button class="ra-btn-save" (click)="guardarPlato()">
-              <i class="bi bi-check-lg"></i> Guardar
-            </button>
-            <button class="ra-btn-cancel" (click)="mostrarFormPlato=false">Cancelar</button>
-          </div>
         </div>
       }
 
-      <div class="ra-table-wrap">
-        <table class="ra-table">
-          <thead>
-            <tr>
-              <th>Plato</th>
-              <th>Categoría</th>
-              <th>Precio</th>
-              <th>Tiempo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (plato of platos; track trackById($index, plato)) {
-              <tr>
-                <td>
-                  <div class="fw-semibold">{{ plato.nombre }}</div>
-                  @if (plato.descripcion) {
-                    <div class="text-muted small">{{ plato.descripcion }}</div>
-                  }
-                </td>
-                <td>
-                  <span class="ra-cat-pill">{{ nombreCategoria(plato.categoria_id) }}</span>
-                </td>
-                <td class="fw-bold text-success">RD$ {{ plato.precio | number:'1.0-0' }}</td>
-                <td><i class="bi bi-clock text-muted me-1"></i>{{ plato.tiempo_preparacion_minutos }}m</td>
-                <td>
-                  <div class="d-flex flex-column gap-1">
-                    @if (!plato.disponible) {
-                      <span class="badge bg-secondary" style="font-size:.65rem">No disponible</span>
-                    }
-                    @if (plato.requiere_inventario && usaInventario) {
-                      <span class="badge bg-warning text-dark" style="font-size:.65rem">
-                        <i class="bi bi-boxes me-1"></i>Inventario
-                      </span>
-                    }
-                    @if (plato.disponible && !plato.requiere_inventario) {
-                      <span class="badge bg-success" style="font-size:.65rem">OK</span>
-                    }
-                  </div>
-                </td>
-                <td>
-                  <div class="d-flex gap-1">
-                    <button class="ra-btn-icon edit" (click)="abrirFormPlato(plato)" title="Editar">
-                      <i class="bi bi-pencil-fill"></i>
-                    </button>
-                    <button class="ra-btn-icon del" (click)="eliminarPlato(plato)" title="Eliminar">
-                      <i class="bi bi-trash-fill"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            }
-            @if (platos.length === 0) {
-              <tr><td colspan="6" class="ra-empty">Sin platos registrados.</td></tr>
-            }
-          </tbody>
-        </table>
-      </div>
     </div>
   }
 
