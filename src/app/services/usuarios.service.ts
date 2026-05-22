@@ -240,8 +240,9 @@ export class UsuariosService {
   // Crear rol
   async crearRol(rol: CrearRol): Promise<Rol> {
     try {
+      const negocioId = rol.negocio_id ?? this.authService.getNegocioId();
+
       // Verificar que el nombre sea único dentro del negocio
-      const negocioId = (rol as any).negocio_id || this.authService.getNegocioId();
       let checkQuery = this.supabaseService.client
         .from('roles')
         .select('id')
@@ -256,7 +257,7 @@ export class UsuariosService {
 
       const { data, error } = await this.supabaseService.client
         .from('roles')
-        .insert([rol])
+        .insert([{ ...rol, negocio_id: negocioId }])
         .select()
         .single();
 

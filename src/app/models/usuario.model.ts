@@ -23,6 +23,7 @@ export interface Rol {
   permisos: string[]; // Array de permisos como JSON
   color: string; // Color para mostrar en UI
   activo: boolean;
+  negocio_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
