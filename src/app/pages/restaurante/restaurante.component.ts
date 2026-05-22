@@ -258,7 +258,7 @@ import { TableWithOrder, TipoOrden, RestaurantOrder } from '../../models/restaur
               </div>
               <div class="d-flex justify-content-end gap-2 mt-3">
                 <button class="btn btn-outline-secondary btn-sm" (click)="cerrarFormLlevar()">Cancelar</button>
-                <button class="btn btn-primary btn-sm fw-semibold" [disabled]="!formNombre.trim()" (click)="confirmarFormLlevar()">
+                <button class="btn btn-primary btn-sm fw-semibold" [disabled]="!formNombre.trim() || (formTipo === 'delivery' && !formDireccion.trim())" (click)="confirmarFormLlevar()">
                   <i class="bi bi-arrow-right me-1"></i>Abrir Orden
                 </button>
               </div>
@@ -435,8 +435,9 @@ export class RestauranteComponent implements OnInit {
     try {
       this.ordenesBarra = await this.ordersService.cargarOrdenesPendientes(['barra']);
       this.cdr.detectChanges();
-    } catch { /* silencioso */ }
-    finally { this.cargandoBarra = false; this.cdr.detectChanges(); }
+    } catch (e: any) {
+      console.error('[Restaurante] Error cargando órdenes barra:', e?.message);
+    } finally { this.cargandoBarra = false; this.cdr.detectChanges(); }
   }
 
   nuevaVentaRapida(): void {
@@ -475,8 +476,9 @@ export class RestauranteComponent implements OnInit {
     try {
       this.ordenesLlevar = await this.ordersService.cargarOrdenesPendientes(['llevar', 'delivery']);
       this.cdr.detectChanges();
-    } catch { /* silencioso */ }
-    finally { this.cargandoLlevar = false; this.cdr.detectChanges(); }
+    } catch (e: any) {
+      console.error('[Restaurante] Error cargando órdenes llevar/delivery:', e?.message);
+    } finally { this.cargandoLlevar = false; this.cdr.detectChanges(); }
   }
 
   abrirFormLlevar(): void {

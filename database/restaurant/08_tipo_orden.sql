@@ -36,7 +36,8 @@ BEGIN
       FROM restaurant_orders
      WHERE negocio_id  = NEW.negocio_id
        AND tipo_orden  IN ('barra', 'llevar', 'delivery')
-       AND created_at::date = CURRENT_DATE;
+       AND (created_at AT TIME ZONE 'America/Santo_Domingo')::date
+             = (NOW() AT TIME ZONE 'America/Santo_Domingo')::date;
 
     NEW.numero_pedido_dia := v_numero;
   END IF;

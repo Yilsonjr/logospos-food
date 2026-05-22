@@ -46,7 +46,8 @@ import { ReportesClientesComponent } from './pages/reportes/clientes/reportes-cl
 // Guards
 import { AuthGuard } from './guards/auth.guard';
 import { PermissionGuard } from './guards/permission.guard';
-import { ModuloGuard } from './guards/modulo.guard'; // 💡 Nuevo Guard
+import { ModuloGuard } from './guards/modulo.guard';
+import { cajaAbiertaGuard } from './guards/caja-abierta.guard';
 
 export const routes: Routes = [
     // Ruta de Login (sin protección)
@@ -107,13 +108,13 @@ export const routes: Routes = [
     {
         path: 'ventas/nueva',
         component: PosComponent,
-        canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
+        canActivate: [AuthGuard, PermissionGuard, ModuloGuard, cajaAbiertaGuard],
         data: { permissions: ['ventas.crear'], modulo: 'ventas' }
     },
     {
         path: 'ventas/mesas',
         component: MesasComponent,
-        canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
+        canActivate: [AuthGuard, PermissionGuard, ModuloGuard, cajaAbiertaGuard],
         data: { permissions: ['ventas.crear'], modulo: 'mesas' }
     },
     {
@@ -287,7 +288,7 @@ export const routes: Routes = [
     {
         path: 'restaurante',
         component: RestauranteComponent,
-        canActivate: [AuthGuard, PermissionGuard, ModuloGuard],
+        canActivate: [AuthGuard, PermissionGuard, ModuloGuard, cajaAbiertaGuard],
         data: { permissions: ['restaurante.mesas'], modulo: 'restaurante' }
     },
     {

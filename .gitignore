@@ -75,3 +75,4 @@ print-agent/instalar-servicio.ps1
 print-agent/INSTALAR-EN-NEGOCIO.md
 database/restaurant/08_fiscal_order_payments.sql
 .gitignore
+database/restaurant/08_tipo_orden.sql

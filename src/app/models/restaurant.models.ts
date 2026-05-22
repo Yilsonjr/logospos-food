@@ -339,7 +339,7 @@ export interface TableWithOrder extends RestaurantTable {
 
 /** Orden completa con todos sus items y datos de menú */
 export interface OrderWithItems extends RestaurantOrder {
-  mesa: RestaurantTable;
+  mesa?: RestaurantTable;  // undefined para órdenes de barra/llevar/delivery
   items: OrderItemWithMenuItem[];
 }
 

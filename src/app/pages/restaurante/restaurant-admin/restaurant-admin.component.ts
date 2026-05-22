@@ -10,6 +10,7 @@ import { PrintersAdminComponent } from '../printers-admin/printers-admin.compone
 import { PrintService } from '../../../services/print.service';
 import { AuthService } from '../../../services/auth.service';
 import { SupabaseService } from '../../../services/supabase.service';
+import { environment } from '../../../environment/environment';
 import {
   RestaurantZone, RestaurantTable, MenuCategory, MenuItem,
   RestaurantInventoryItem, RestaurantInventoryMovement, TipoMovimientoInventario,
@@ -479,15 +480,14 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     this.subiendoImagen = true;
     try {
       const ext = file.name.split('.').pop() ?? 'jpg';
-      const nombre = `platos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const negocioId = localStorage.getItem('logos_negocio_id') || 'sin-negocio';
+      const nombre = `platos/${negocioId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
       const { error } = await this.supabaseService.client.storage
         .from('menu-images')
         .upload(nombre, file, { upsert: true, contentType: file.type });
       if (error) throw error;
-      const { data: urlData } = this.supabaseService.client.storage
-        .from('menu-images')
-        .getPublicUrl(nombre);
-      this.platoForm.imagen_url = urlData.publicUrl;
+      this.platoForm.imagen_url =
+        `${environment.SUPABASE_URL}/storage/v1/object/public/menu-images/${nombre}`;
     } catch (e: any) {
       Swal.fire('Error al subir imagen', e.message ?? 'Verifica que el bucket "menu-images" exista en Supabase Storage.', 'error');
     } finally {
