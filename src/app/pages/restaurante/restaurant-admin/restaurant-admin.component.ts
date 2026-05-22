@@ -56,10 +56,11 @@ export class RestaurantAdminComponent implements OnInit {
   platoForm: {
     categoria_id: string; nombre: string; descripcion: string;
     precio: number; costo_estimado: number | null; tiempo_preparacion_minutos: number;
-    notas_cocina: string; requiere_inventario: boolean; enviar_a_cocina: boolean; disponible: boolean;
+    notas_cocina: string; requiere_inventario: boolean; enviar_a_cocina: boolean;
+    disponible: boolean; imagen_url: string | null;
   } = { categoria_id: '', nombre: '', descripcion: '', precio: 0, costo_estimado: null,
         tiempo_preparacion_minutos: 15, notas_cocina: '', requiere_inventario: false,
-        enviar_a_cocina: true, disponible: true };
+        enviar_a_cocina: true, disponible: true, imagen_url: null };
   editandoPlato: MenuItem | null = null;
   mostrarFormPlato = false;
   categoriaFiltroPlatos = '';
@@ -373,10 +374,11 @@ export class RestaurantAdminComponent implements OnInit {
           notas_cocina: plato.notas_cocina || '',
           requiere_inventario: plato.requiere_inventario ?? false,
           enviar_a_cocina: plato.enviar_a_cocina ?? true,
-          disponible: plato.disponible ?? true }
+          disponible: plato.disponible ?? true,
+          imagen_url: plato.imagen_url ?? null }
       : { categoria_id: this.categorias[0]?.id || '', nombre: '', descripcion: '',
           precio: 0, costo_estimado: null, tiempo_preparacion_minutos: 15, notas_cocina: '',
-          requiere_inventario: false, enviar_a_cocina: true, disponible: true };
+          requiere_inventario: false, enviar_a_cocina: true, disponible: true, imagen_url: null };
     this.mostrarFormPlato = true;
     if (plato) {
       this.cargarModificadores(plato.id);
@@ -631,6 +633,13 @@ export class RestaurantAdminComponent implements OnInit {
 
   nombreInsumo(id: string): string {
     return this.inventarioItems.find(i => i.id === id)?.nombre || id;
+  }
+
+  stockPct(item: RestaurantInventoryItem): number {
+    const min = item.cantidad_minima || 0;
+    const actual = item.cantidad_actual || 0;
+    if (min === 0) return actual > 0 ? 100 : 0;
+    return Math.min(100, Math.round((actual / (min * 2)) * 100));
   }
 
   tipoMovLabel(tipo: TipoMovimientoInventario): string {

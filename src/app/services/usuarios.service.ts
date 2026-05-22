@@ -224,7 +224,9 @@ export class UsuariosService {
         .select('*')
         .order('nombre', { ascending: true });
 
-      if (negocioId) query = query.eq('negocio_id', negocioId);
+      // Incluir roles del negocio actual Y roles globales (negocio_id IS NULL)
+      // Esto permite que la sincronización encuentre los predefinidos y no los duplique
+      if (negocioId) query = query.or(`negocio_id.eq.${negocioId},negocio_id.is.null`);
 
       const { data, error } = await query;
       if (error) throw error;

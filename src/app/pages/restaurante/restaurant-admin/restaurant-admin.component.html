@@ -352,14 +352,30 @@
               <label class="ra-label">Tiempo prep. (min)</label>
               <input type="number" class="form-control form-control-sm" [(ngModel)]="platoForm.tiempo_preparacion_minutos" min="0">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-5">
               <label class="ra-label">Descripción</label>
               <input class="form-control form-control-sm" [(ngModel)]="platoForm.descripcion" placeholder="Ingredientes, acompañantes…">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-5">
               <label class="ra-label">Notas para cocina</label>
               <input class="form-control form-control-sm" [(ngModel)]="platoForm.notas_cocina" placeholder="Instrucciones de preparación…">
             </div>
+            <div class="col-md-2">
+              <label class="ra-label">Imagen (URL)</label>
+              <input class="form-control form-control-sm" [(ngModel)]="platoForm.imagen_url"
+                placeholder="https://…">
+            </div>
+            @if (platoForm.imagen_url) {
+              <div class="col-12">
+                <div class="plato-img-preview">
+                  <img [src]="platoForm.imagen_url" alt="preview"
+                    onerror="this.style.display='none'" />
+                  <button class="plato-img-clear" (click)="platoForm.imagen_url=null" title="Quitar imagen">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+            }
             <div class="col-12 d-flex gap-4 align-items-center pt-1 flex-wrap">
               <div class="form-check form-switch mb-0">
                 <input class="form-check-input" type="checkbox" id="chkDisponible"
@@ -682,70 +698,80 @@
 
       <!-- SUB-TAB: Insumos -->
       @if (invSubTab === 'items') {
-        <div class="ra-table-wrap">
-          <table class="ra-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Unidad</th>
-                <th class="text-end">Stock actual</th>
-                <th class="text-end">Stock mínimo</th>
-                <th class="text-end">Costo unit.</th>
-                <th>En el menú</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of inventarioItems; track item.id) {
-                <tr [class.table-danger]="item.stock_bajo">
-                  <td class="fw-semibold">
-                    @if (item.stock_bajo) {
-                      <i class="bi bi-exclamation-circle-fill text-danger me-1" title="Stock bajo"></i>
-                    }
-                    {{ item.nombre }}
-                  </td>
-                  <td><span class="badge bg-secondary">{{ item.unidad_medida }}</span></td>
-                  <td class="text-end" [class.text-danger]="item.stock_bajo" [class.fw-bold]="item.stock_bajo">
-                    {{ item.cantidad_actual | number:'1.0-3' }}
-                  </td>
-                  <td class="text-end text-muted">{{ item.cantidad_minima | number:'1.0-3' }}</td>
-                  <td class="text-end">RD$ {{ item.costo_unitario | number:'1.2-2' }}</td>
-                  <td>
+        @if (inventarioItems.length === 0) {
+          <div class="ra-empty">Sin insumos registrados. Agrega bebidas e ingredientes.</div>
+        } @else {
+          <div class="inv-cards-grid">
+            @for (item of inventarioItems; track item.id) {
+              <div class="inv-card" [class.inv-card-danger]="item.stock_bajo">
+
+                <!-- Header -->
+                <div class="inv-card-head">
+                  <div class="inv-card-icon" [class.inv-icon-danger]="item.stock_bajo" [class.inv-icon-ok]="!item.stock_bajo">
+                    <i class="bi bi-box-seam"></i>
+                  </div>
+                  <div class="inv-card-title-wrap">
+                    <span class="inv-card-nombre">{{ item.nombre }}</span>
+                    <span class="inv-card-unidad">{{ item.unidad_medida }}</span>
+                  </div>
+                  @if (item.stock_bajo) {
+                    <span class="inv-alerta" title="Stock bajo el mínimo">
+                      <i class="bi bi-exclamation-triangle-fill"></i>
+                    </span>
+                  }
+                </div>
+
+                <!-- Barra de stock -->
+                <div class="inv-stock-wrap">
+                  <div class="inv-stock-track">
+                    <div class="inv-stock-fill"
+                      [class.inv-stock-danger]="item.stock_bajo"
+                      [class.inv-stock-warn]="!item.stock_bajo && stockPct(item) < 60"
+                      [style.width.%]="stockPct(item)">
+                    </div>
+                  </div>
+                  <span class="inv-stock-label" [class.text-danger]="item.stock_bajo">
+                    {{ item.cantidad_actual | number:'1.0-2' }}
+                    <span class="text-muted"> / {{ item.cantidad_minima | number:'1.0-2' }} mín</span>
+                  </span>
+                </div>
+
+                <!-- Stats row -->
+                <div class="inv-stats-row">
+                  <div class="inv-stat-item">
+                    <span class="inv-stat-val">RD$ {{ item.costo_unitario | number:'1.0-0' }}</span>
+                    <span class="inv-stat-key">costo unit.</span>
+                  </div>
+                  <div class="inv-stat-item">
                     @if (usosPorInsumo[item.id]?.length) {
-                      <span class="badge bg-success-subtle text-success border border-success-subtle"
-                        style="font-size:.7rem" [title]="usosPorInsumo[item.id].join(', ')">
+                      <span class="inv-en-menu" [title]="usosPorInsumo[item.id].join(', ')">
                         <i class="bi bi-egg-fried me-1"></i>{{ usosLabel(item.id) }}
                       </span>
                     } @else {
-                      <button class="btn btn-xs btn-outline-primary" style="font-size:.7rem;padding:2px 7px"
-                        (click)="abrirWizardProducto(item)"
-                        title="Crear como producto del menú">
-                        <i class="bi bi-plus-circle me-1"></i>Crear producto
+                      <button class="inv-crear-btn" (click)="abrirWizardProducto(item)">
+                        <i class="bi bi-plus-circle me-1"></i>Crear en menú
                       </button>
                     }
-                  </td>
-                  <td>
-                    <div class="d-flex gap-1 justify-content-end">
-                      <button class="ra-btn-icon" title="Registrar entrada"
-                        (click)="abrirFormEntrada(item)">
-                        <i class="bi bi-box-arrow-in-down text-success"></i>
-                      </button>
-                      <button class="ra-btn-icon edit" (click)="abrirFormInv(item)" title="Editar">
-                        <i class="bi bi-pencil-fill"></i>
-                      </button>
-                      <button class="ra-btn-icon del" (click)="eliminarInv(item)" title="Eliminar">
-                        <i class="bi bi-trash-fill"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              }
-              @if (inventarioItems.length === 0) {
-                <tr><td colspan="7" class="ra-empty">Sin insumos registrados. Agrega bebidas e ingredientes.</td></tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="inv-card-actions">
+                  <button class="inv-action-btn entrada" (click)="abrirFormEntrada(item)" title="Registrar entrada">
+                    <i class="bi bi-box-arrow-in-down"></i> Entrada
+                  </button>
+                  <button class="inv-action-btn edit" (click)="abrirFormInv(item)" title="Editar">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  <button class="inv-action-btn del" (click)="eliminarInv(item)" title="Eliminar">
+                    <i class="bi bi-trash-fill"></i>
+                  </button>
+                </div>
+
+              </div>
+            }
+          </div>
+        }
       }
 
       <!-- SUB-TAB: Movimientos -->
