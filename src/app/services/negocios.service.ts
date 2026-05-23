@@ -166,14 +166,14 @@ export class NegociosService {
                 for (const rolDef of ROLES_PREDEFINIDOS) {
                     const { data: nuevoRol, error: errorRol } = await this.supabaseService.client
                         .from('roles')
-                        .insert([{
+                        .upsert([{
                             nombre: rolDef.nombre,
                             descripcion: rolDef.descripcion,
                             permisos: [...rolDef.permisos],
                             color: rolDef.color,
                             activo: true,
-                            negocio_id: nuevoNegocio.id // Aseguramos que el rol sea de este negocio
-                        }])
+                            negocio_id: nuevoNegocio.id
+                        }], { onConflict: 'nombre,negocio_id', ignoreDuplicates: false })
                         .select()
                         .single();
 
