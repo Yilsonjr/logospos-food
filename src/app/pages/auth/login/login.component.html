@@ -1,60 +1,78 @@
-<div class="row g-0 min-vh-100 overflow-hidden">
+<div class="login-page">
 
-  <!-- Left Side: Immersive Image -->
-  <div
-    class="col-lg-6 d-none d-lg-flex flex-column align-items-center justify-content-center bg-dark position-relative overflow-hidden">
-    <div class="bg-image w-100 h-100 position-absolute top-0 start-0"
-      [style.background-image]="'url(' + currentBackground + ')'" style="
-      background-size: cover;
-      background-position: center;
-      filter: brightness(0.6) blur(2px);
-      transform: scale(1.1);">
-    </div>
+  <!-- Left Side: Abstract Gradient Panel -->
+  <div class="login-left d-none d-lg-flex">
 
-    <div class="position-relative z-1 text-center text-white p-5">
-      <div class="mb-4">
-        <div
-          class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 shadow-lg backdrop-blur"
-          style="width: 100px; height: 100px;">
-          <i class="fa-solid fa-golf-ball-tee fs-1"></i>
+    <!-- Orbes decorativos -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
 
+    <!-- Grid pattern overlay -->
+    <div class="grid-overlay"></div>
+
+    <!-- Contenido central -->
+    <div class="login-left-content">
+      <div class="brand-icon">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+      </div>
+      <h1 class="brand-name">LogosPOS</h1>
+      <p class="brand-tagline">Gestión Inteligente para tu Negocio</p>
+
+      <!-- Features -->
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Punto de Venta · Restaurante · Bar</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Cuentas por Cobrar · Inventario</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Reportes · Fiscal · Multi-negocio</span>
         </div>
       </div>
-      <h1 class="display-4 fw-bold mb-3 tracking-tight">LogosPOS</h1>
-      <p class="lead fw-light opacity-75 mb-0" style="letter-spacing: 1px;">Gestión Inteligente para tu Negocio</p>
     </div>
 
-    <div class="position-absolute bottom-0 start-0 w-100 p-4 text-white-50 small text-center z-1">
-      <p class="mb-0">Powered by YilsonDev &copy; 2026</p>
+    <div class="login-left-footer">
+      Powered by YilsonDev &copy; 2026
     </div>
   </div>
 
   <!-- Right Side: Login Form -->
-  <div class="col-lg-6 d-flex align-items-center justify-content-center bg-white position-relative">
-    <div class="login-wrapper w-100 px-4 px-md-5" style="max-width: 520px;">
+  <div class="login-right">
+    <div class="login-form-wrap">
 
-      <div class="mb-5">
-        <h3 class="fw-bold text-dark mb-2">Bienvenido de nuevo</h3>
-        <p class="text-muted">Ingresa tus credenciales para acceder al sistema.</p>
+      <!-- Logo mobile -->
+      <div class="d-flex d-lg-none align-items-center gap-2 mb-4">
+        <div class="brand-icon-sm">
+          <i class="bi bi-grid-3x3-gap-fill"></i>
+        </div>
+        <span class="brand-name-sm">LogosPOS</span>
       </div>
 
-      <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="needs-validation">
+      <div class="mb-5">
+        <h3 class="fw-bold text-dark mb-1">Bienvenido de nuevo</h3>
+        <p class="text-muted small">Ingresa tus credenciales para acceder al sistema.</p>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
 
         <div class="form-floating mb-3">
-          <input type="text" class="form-control bg-light border-0 shadow-sm" id="username" name="username"
+          <input type="text" class="form-control login-input" id="username" name="username"
             [(ngModel)]="credentials.username" placeholder="Usuario" required [disabled]="isLoading">
-          <label for="username" class="text-muted"><i class="fa-solid fa-user me-2"></i>Usuario</label>
+          <label for="username"><i class="bi bi-person me-2"></i>Usuario</label>
         </div>
 
         <div class="form-floating mb-4 position-relative">
-          <input [type]="showPassword ? 'text' : 'password'" class="form-control bg-light border-0 shadow-sm"
-            id="password" name="password" [(ngModel)]="credentials.password" placeholder="Contraseña" required
-            [disabled]="isLoading">
-          <label for="password" class="text-muted"><i class="fa-solid fa-lock me-2"></i>Contraseña</label>
-          <button type="button"
-            class="btn btn-link text-decoration-none position-absolute top-50 end-0 translate-middle-y me-2 text-muted"
-            (click)="togglePasswordVisibility()" tabindex="-1">
-            <i class="fa-solid" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+          <input [type]="showPassword ? 'text' : 'password'" class="form-control login-input"
+            id="password" name="password" [(ngModel)]="credentials.password"
+            placeholder="Contraseña" required [disabled]="isLoading">
+          <label for="password"><i class="bi bi-lock me-2"></i>Contraseña</label>
+          <button type="button" class="btn-toggle-pw" (click)="togglePasswordVisibility()" tabindex="-1">
+            <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
           </button>
         </div>
 
@@ -66,26 +84,26 @@
               Recordarme
             </label>
           </div>
-          <a href="#" class="text-decoration-none small fw-semibold link-primary"
+          <a href="#" class="text-decoration-none small fw-semibold text-primary"
             (click)="$event.preventDefault()">¿Olvidaste tu contraseña?</a>
         </div>
 
-        <button type="submit"
-          class="btn btn-primary w-100 btn-lg rounded-pill fw-bold shadow-sm d-flex justify-content-center align-items-center mb-4 hover-lift"
-          [disabled]="isLoading || !loginForm.form.valid">
+        <button type="submit" class="btn-login w-100" [disabled]="isLoading || !loginForm.form.valid">
           @if (isLoading) {
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          Accediendo...
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Accediendo...
           } @else {
-          Ingresar al Sistema <i class="fa-solid fa-arrow-right ms-2"></i>
+            Ingresar al Sistema <i class="bi bi-arrow-right ms-2"></i>
           }
         </button>
 
       </form>
 
       <div class="text-center mt-5">
-        <p class="text-muted small mb-0">¿Necesitas ayuda? <a href="#"
-            class="text-dark fw-bold text-decoration-none">Contactar Soporte</a></p>
+        <p class="text-muted small mb-0">
+          ¿Necesitas ayuda?
+          <a href="#" class="text-dark fw-bold text-decoration-none">Contactar Soporte</a>
+        </p>
       </div>
 
     </div>

@@ -24,25 +24,11 @@ export class LoginComponent implements OnInit {
   showPassword = false;
   hasError = false;
 
-  // Imágenes de fondo dinámicas
-  backgroundImages = [
-    'assets/images/img-1.jpg',
-    'assets/images/img-2.jpg',
-  ];
-  currentBackground = this.backgroundImages[0];
-
   constructor(
     private authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef
-  ) {
-    this.rotateBackground();
-  }
-
-  rotateBackground() {
-    const randomIndex = Math.floor(Math.random() * this.backgroundImages.length);
-    this.currentBackground = this.backgroundImages[randomIndex];
-  }
+  ) {}
 
   ngOnInit() {
     // Si ya está autenticado, redirigir según rol
