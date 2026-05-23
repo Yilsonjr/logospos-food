@@ -24,7 +24,7 @@ export class FiscalService {
             const { data, error } = await this.supabaseService.client
                 .from('configuracion_fiscal')
                 .select('*')
-                .single();
+                .maybeSingle();
 
             if (data) {
                 this.configSubject.next(data);
