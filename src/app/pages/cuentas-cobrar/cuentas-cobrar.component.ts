@@ -193,7 +193,8 @@ export class CuentasCobrarComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatearFecha(fecha: string): string {
+  formatearFecha(fecha: string | null | undefined): string {
+    if (!fecha) return '—';
     return new Date(fecha).toLocaleDateString('es-DO', {
       year: 'numeric',
       month: 'short',
@@ -201,7 +202,8 @@ export class CuentasCobrarComponent implements OnInit, OnDestroy {
     });
   }
 
-  diasVencimiento(fechaVencimiento: string): number {
+  diasVencimiento(fechaVencimiento: string | null | undefined): number {
+    if (!fechaVencimiento) return 0;
     const hoy = new Date();
     const vencimiento = new Date(fechaVencimiento);
     const diff = vencimiento.getTime() - hoy.getTime();

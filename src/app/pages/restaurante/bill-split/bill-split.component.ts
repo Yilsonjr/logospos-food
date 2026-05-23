@@ -216,48 +216,80 @@ export class BillSplitComponent implements OnInit {
   async procesarPago(cuenta: CuentaComensal): Promise<void> {
     if (!this.orden) return;
 
-    // Crédito: seleccionar cliente registrado o ingresar nombre libre
+    // Crédito: buscar cliente registrado o ingresar nombre libre
     if (cuenta.forma_pago === 'credito' && !this.clienteCredito.trim()) {
       const clientes = this.clientesService.getClientesActivos();
-      const opcionesHtml = clientes.map(c =>
-        `<option value="${c.id}">${c.nombre}${c.telefono ? ' · ' + c.telefono : ''}</option>`
-      ).join('');
+      let clienteSeleccionadoId: number | null = null;
 
-      const { value: seleccion, isConfirmed } = await Swal.fire({
+      const renderSugerencias = (filtro: string) => {
+        const lista = document.getElementById('swal-lista-clientes')!;
+        const term = filtro.toLowerCase().trim();
+        const coincidencias = term.length < 1 ? [] :
+          clientes.filter(c =>
+            c.nombre.toLowerCase().includes(term) ||
+            (c.telefono || '').includes(term)
+          ).slice(0, 6);
+
+        lista.innerHTML = coincidencias.map(c =>
+          `<div class="swal-cliente-item" data-id="${c.id}" data-nombre="${c.nombre}"
+            style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:.9rem;text-align:left">
+            <strong>${c.nombre}</strong>${c.telefono ? `<span style="color:#6b7280;margin-left:8px;font-size:.8rem">${c.telefono}</span>` : ''}
+          </div>`
+        ).join('') + (coincidencias.length === 0 && term.length > 0
+          ? `<div style="padding:8px 12px;color:#9ca3af;font-size:.85rem;text-align:left">Sin coincidencias — se guardará como nombre libre</div>`
+          : '');
+
+        lista.querySelectorAll('.swal-cliente-item').forEach(el => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const id = +(el as HTMLElement).dataset['id']!;
+            const nombre = (el as HTMLElement).dataset['nombre']!;
+            clienteSeleccionadoId = id;
+            (document.getElementById('swal-buscar-cliente') as HTMLInputElement).value = nombre;
+            lista.innerHTML = '';
+          });
+        });
+      };
+
+      const { value: nombre, isConfirmed } = await Swal.fire<string>({
         title: 'Cobro a Crédito',
         html: `
-          <p class="text-muted small mb-3">Selecciona un cliente registrado o ingresa un nombre</p>
-          <select id="swal-cliente-select" class="swal2-input" style="width:100%;margin-bottom:8px">
-            <option value="">— Cliente no registrado —</option>
-            ${opcionesHtml}
-          </select>
-          <input id="swal-cliente-nombre" class="swal2-input" placeholder="Nombre (si no está registrado)" style="width:100%">
+          <p style="color:#6b7280;font-size:.85rem;margin-bottom:12px">
+            Escribe el nombre del cliente o búscalo por nombre/teléfono
+          </p>
+          <div style="position:relative">
+            <input id="swal-buscar-cliente" class="swal2-input" autocomplete="off"
+              placeholder="Nombre o teléfono del cliente…"
+              style="width:100%;margin:0 0 0 0">
+            <div id="swal-lista-clientes"
+              style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;
+                     max-height:200px;overflow-y:auto;margin-top:4px"></div>
+          </div>
         `,
         showCancelButton: true,
         confirmButtonText: 'Confirmar Crédito',
         confirmButtonColor: '#6f42c1',
         cancelButtonText: 'Cancelar',
+        focusConfirm: false,
         didOpen: () => {
-          const select = document.getElementById('swal-cliente-select') as HTMLSelectElement;
-          const input  = document.getElementById('swal-cliente-nombre') as HTMLInputElement;
-          select.addEventListener('change', () => {
-            const opt = clientes.find(c => c.id === +select.value);
-            if (opt) { input.value = opt.nombre; input.disabled = true; }
-            else      { input.value = '';         input.disabled = false; }
+          const input = document.getElementById('swal-buscar-cliente') as HTMLInputElement;
+          input.focus();
+          input.addEventListener('input', () => {
+            clienteSeleccionadoId = null; // resetear si escribe de nuevo
+            renderSugerencias(input.value);
           });
         },
         preConfirm: () => {
-          const select = document.getElementById('swal-cliente-select') as HTMLSelectElement;
-          const input  = document.getElementById('swal-cliente-nombre') as HTMLInputElement;
-          const nombre = input.value.trim() || clientes.find(c => c.id === +select.value)?.nombre || '';
-          if (!nombre) { Swal.showValidationMessage('El nombre del cliente es requerido'); return false; }
-          return { clienteId: select.value ? +select.value : null, nombre };
+          const input = document.getElementById('swal-buscar-cliente') as HTMLInputElement;
+          const val = input.value.trim();
+          if (!val) { Swal.showValidationMessage('El nombre del cliente es requerido'); return false; }
+          return val;
         }
       });
 
-      if (!isConfirmed || !seleccion) return;
-      this.clienteCredito   = seleccion.nombre;
-      this.clienteCreditoId = seleccion.clienteId;
+      if (!isConfirmed || !nombre) return;
+      this.clienteCredito   = nombre;
+      this.clienteCreditoId = clienteSeleccionadoId;
     }
 
     try {
