@@ -56,6 +56,16 @@
         <i class="bi bi-clock-history"></i> Historial de Órdenes
       </button>
     }
+    @if (puedeVerTab('creditos')) {
+      <button class="ra-tab" [class.active]="tabActiva==='creditos'" (click)="cargarTab('creditos')">
+        <i class="bi bi-credit-card-2-back"></i> Créditos
+        @if (totalCreditoPendiente > 0) {
+          <span class="badge bg-danger ms-1" style="font-size:0.65rem">
+            RD$ {{ totalCreditoPendiente | number:'1.0-0' }}
+          </span>
+        }
+      </button>
+    }
     @if (puedeVerTab('impresoras')) {
       <button class="ra-tab" [class.active]="tabActiva==='impresoras'" (click)="cargarTab('impresoras')">
         <i class="bi bi-printer-fill"></i> Impresoras
@@ -1456,6 +1466,151 @@
               <i class="bi bi-printer-fill"></i> Reimprimir Ticket
             </button>
             <button class="btn btn-sm btn-secondary" (click)="ordenSeleccionada = null">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- ══════════ TAB: CRÉDITOS ══════════ -->
+  @if (!cargando && tabActiva === 'creditos') {
+    <div class="ra-card">
+      <div class="ra-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <h6 class="ra-section-title mb-0">
+          <i class="bi bi-credit-card-2-back text-danger"></i> Cuentas por Cobrar
+        </h6>
+        <div class="d-flex align-items-center gap-2">
+          <select class="form-select form-select-sm" style="max-width:160px" [(ngModel)]="filtroCreditoEstado" (change)="cdr.detectChanges()">
+            <option value="">Todos</option>
+            <option value="pendiente">Pendientes</option>
+            <option value="parcial">Parcialmente abonados</option>
+            <option value="pagada">Pagados</option>
+            <option value="vencida">Vencidos</option>
+          </select>
+          <button class="btn btn-sm btn-outline-secondary" (click)="cargarCreditos()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Resumen -->
+      @if (totalCreditoPendiente > 0) {
+        <div class="alert alert-warning d-flex align-items-center gap-2 mx-3 mt-3 mb-0 py-2">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span class="small fw-bold">Total pendiente por cobrar: RD$ {{ totalCreditoPendiente | number:'1.2-2' }}</span>
+        </div>
+      }
+
+      @if (creditosFiltrados.length === 0) {
+        <div class="ra-empty py-5 text-center text-muted">
+          <i class="bi bi-check-circle display-4 d-block mb-3 text-success opacity-50"></i>
+          <span>No hay cuentas en este estado.</span>
+        </div>
+      } @else {
+        <div class="ra-table-wrap">
+          <table class="ra-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Orden</th>
+                <th>Fecha</th>
+                <th class="text-end">Monto original</th>
+                <th class="text-end">Saldo pendiente</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of creditosFiltrados; track c.id) {
+                <tr class="align-middle">
+                  <td class="fw-bold">{{ c.cliente_nombre }}</td>
+                  <td class="font-monospace text-secondary small">#{{ c.order_id?.slice(-6)?.toUpperCase() || 'N/A' }}</td>
+                  <td class="small text-muted">{{ formatearFecha(c.created_at) }}</td>
+                  <td class="text-end font-monospace">RD$ {{ c.monto_total | number:'1.2-2' }}</td>
+                  <td class="text-end font-monospace fw-bold"
+                    [class.text-danger]="c.monto_pendiente > 0"
+                    [class.text-success]="c.monto_pendiente === 0">
+                    RD$ {{ c.monto_pendiente | number:'1.2-2' }}
+                  </td>
+                  <td>
+                    <span class="badge rounded-pill"
+                      [class.bg-danger-subtle]="c.estado === 'pendiente'"
+                      [class.text-danger]="c.estado === 'pendiente'"
+                      [class.bg-warning-subtle]="c.estado === 'parcial'"
+                      [class.text-warning]="c.estado === 'parcial'"
+                      [class.bg-success-subtle]="c.estado === 'pagada'"
+                      [class.text-success]="c.estado === 'pagada'"
+                      [class.bg-secondary-subtle]="c.estado === 'vencida'"
+                      [class.text-secondary]="c.estado === 'vencida'">
+                      {{ c.estado }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (c.estado !== 'pagada') {
+                      <button class="btn btn-xs btn-success shadow-sm" (click)="abrirAbono(c)">
+                        <i class="bi bi-cash-coin"></i> Abonar
+                      </button>
+                    }
+                    @if (c.abonos?.length > 0) {
+                      <span class="ms-2 text-muted small">{{ c.abonos.length }} abono(s)</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+    <!-- Modal Registrar Abono -->
+    @if (creditoSeleccionado) {
+      <div class="ra-modal-overlay">
+        <div class="ra-modal" style="max-width:420px">
+          <div class="ra-modal-header d-flex align-items-center justify-content-between bg-success text-white p-3">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-cash-coin me-2"></i>Registrar Abono</h6>
+            <button class="btn-close btn-close-white" (click)="creditoSeleccionado = null"></button>
+          </div>
+          <div class="ra-modal-body p-4">
+            <p class="text-muted small mb-1">Cliente</p>
+            <p class="fw-bold fs-5 mb-3">{{ creditoSeleccionado.cliente_nombre }}</p>
+
+            <div class="d-flex justify-content-between mb-3 p-2 bg-light rounded">
+              <span class="small text-muted">Saldo pendiente:</span>
+              <span class="fw-bold text-danger">RD$ {{ creditoSeleccionado.monto_pendiente | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Monto del abono</label>
+              <div class="input-group">
+                <span class="input-group-text">RD$</span>
+                <input type="number" class="form-control" [(ngModel)]="abonoMonto"
+                  [max]="creditoSeleccionado.monto_pendiente" min="0.01" step="0.01">
+              </div>
+              <div class="d-flex gap-2 mt-1">
+                <button class="btn btn-xs btn-outline-secondary" (click)="abonoMonto = creditoSeleccionado.monto_pendiente">
+                  Saldar total
+                </button>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Forma de pago</label>
+              <select class="form-select" [(ngModel)]="abonoFormaPago">
+                <option value="efectivo">Efectivo</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+          </div>
+          <div class="ra-modal-footer bg-light p-3 d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-secondary" (click)="creditoSeleccionado = null">Cancelar</button>
+            <button class="btn btn-sm btn-success fw-bold" (click)="registrarAbono()"
+              [disabled]="procesandoAbono || abonoMonto <= 0">
+              @if (procesandoAbono) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="bi bi-check-lg"></i> Confirmar Abono
+            </button>
           </div>
         </div>
       </div>

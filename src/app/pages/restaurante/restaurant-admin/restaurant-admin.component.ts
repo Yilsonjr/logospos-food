@@ -18,7 +18,7 @@ import {
 } from '../../../models/restaurant.models';
 import Swal from 'sweetalert2';
 
-type Tab = 'zonas' | 'mesas' | 'categorias' | 'platos' | 'inventario' | 'compras' | 'ordenes' | 'impresoras';
+type Tab = 'zonas' | 'mesas' | 'categorias' | 'platos' | 'inventario' | 'compras' | 'ordenes' | 'creditos' | 'impresoras';
 
 @Component({
   selector: 'app-restaurant-admin',
@@ -120,6 +120,14 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     { nombre: '', precio: 0, categoria_id: '' };
   guardandoProducto = false;
 
+  // ── Créditos / Cuentas por Cobrar ────────────────────────
+  cuentasCredito: any[] = [];
+  filtroCreditoEstado = 'pendiente';
+  creditoSeleccionado: any = null;
+  abonoMonto = 0;
+  abonoFormaPago = 'efectivo';
+  procesandoAbono = false;
+
   // ── Órdenes / Historial ──────────────────────────────────
   historialOrdenes: any[] = [];
   ordenSeleccionada: any = null;
@@ -149,7 +157,7 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     private printService: PrintService,
     private authService: AuthService,
     private supabaseService: SupabaseService,
-    private cdr: ChangeDetectorRef
+    public cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -180,7 +188,7 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   }
 
   get primeraTabAccesible(): Tab {
-    const todas: Tab[] = ['zonas','mesas','categorias','platos','inventario','compras','ordenes','impresoras'];
+    const todas: Tab[] = ['zonas','mesas','categorias','platos','inventario','compras','ordenes','creditos','impresoras'];
     return todas.find(t => this.puedeVerTab(t)) ?? 'ordenes';
   }
 
@@ -226,6 +234,9 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
       }
       if (tab === 'ordenes') {
         this.historialOrdenes = await this.ordersService.obtenerHistorial(100);
+      }
+      if (tab === 'creditos') {
+        await this.cargarCreditos();
       }
     } catch (e: any) {
       console.error('[RestaurantAdmin] Error cargando tab', tab, e);
@@ -900,6 +911,65 @@ ${piePagina}
       const url = URL.createObjectURL(blob);
       w.location.href = url;
       setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 600);
+    }
+  }
+
+  // ── CRÉDITOS ─────────────────────────────────────────────
+
+  async cargarCreditos(): Promise<void> {
+    const negocioId = localStorage.getItem('logos_negocio_id') || '';
+    const { data, error } = await this.supabaseService.client
+      .from('cuentas_por_cobrar')
+      .select(`*, abonos:pagos_cuentas(id, monto, metodo_pago, created_at)`)
+      .eq('negocio_id', negocioId)
+      .ilike('concepto', 'Restaurante%')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    this.cuentasCredito = data || [];
+    this.cdr.detectChanges();
+  }
+
+  get creditosFiltrados(): any[] {
+    if (!this.filtroCreditoEstado) return this.cuentasCredito;
+    if (this.filtroCreditoEstado === 'pendiente')
+      return this.cuentasCredito.filter(c => c.estado === 'pendiente' || c.estado === 'parcial');
+    return this.cuentasCredito.filter(c => c.estado === this.filtroCreditoEstado);
+  }
+
+  get totalCreditoPendiente(): number {
+    return this.cuentasCredito
+      .filter(c => c.estado !== 'pagada' && c.estado !== 'anulada')
+      .reduce((acc, c) => acc + (c.monto_pendiente || 0), 0);
+  }
+
+  abrirAbono(credito: any): void {
+    this.creditoSeleccionado = credito;
+    this.abonoMonto = credito.monto_pendiente;
+    this.abonoFormaPago = 'efectivo';
+  }
+
+  async registrarAbono(): Promise<void> {
+    if (!this.creditoSeleccionado || this.abonoMonto <= 0) return;
+    this.procesandoAbono = true;
+    try {
+      const negocioId = localStorage.getItem('logos_negocio_id') || '';
+      const { error } = await this.supabaseService.client
+        .from('pagos_cuentas')
+        .insert({
+          cuenta_id: this.creditoSeleccionado.id,
+          negocio_id: negocioId,
+          monto: this.abonoMonto,
+          metodo_pago: this.abonoFormaPago
+        });
+      if (error) throw error;
+      this.creditoSeleccionado = null;
+      await this.cargarCreditos();
+      Swal.fire({ icon: 'success', title: 'Abono registrado', timer: 1500, showConfirmButton: false });
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    } finally {
+      this.procesandoAbono = false;
+      this.cdr.detectChanges();
     }
   }
 

@@ -80,3 +80,5 @@ database/restaurant/09_precios_incluyen_impuesto.sql
 database/restaurant/10_modo_impuesto.sql
 database/restaurant/11_formato_ticket.sql
 database/restaurant/repair_tipo_orden.sql
+database/restaurant/12_credito_restaurante.sql
+database/restaurant/12_cuentas_credito.sql

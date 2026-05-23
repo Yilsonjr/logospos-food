@@ -27,7 +27,7 @@ export type EstadoTicketCocina = 'nuevo' | 'en_preparacion' | 'listo' | 'entrega
 export type PrioridadTicket = 'baja' | 'normal' | 'alta' | 'urgente';
 
 /** Métodos de pago aceptados */
-export type FormaPago = 'efectivo' | 'tarjeta' | 'transferencia' | 'cheque' | 'mixto';
+export type FormaPago = 'efectivo' | 'tarjeta' | 'transferencia' | 'cheque' | 'mixto' | 'credito';
 
 /** Tipos de movimiento de inventario */
 export type TipoMovimientoInventario = 'entrada' | 'salida' | 'ajuste' | 'merma' | 'produccion';

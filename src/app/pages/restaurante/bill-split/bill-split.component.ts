@@ -49,7 +49,8 @@ export class BillSplitComponent implements OnInit {
   configFiscal: ConfiguracionFiscal | null = null;
   readonly tiposComprobante = TIPOS_COMPROBANTE.filter(t => t.codigo !== 'B03' && t.codigo !== 'B04');
 
-  readonly formasPago: FormaPago[] = ['efectivo', 'tarjeta', 'transferencia', 'cheque', 'mixto'];
+  readonly formasPago: FormaPago[] = ['efectivo', 'tarjeta', 'transferencia', 'cheque', 'mixto', 'credito'];
+  clienteCredito = '';  // Nombre del cliente cuando forma_pago = credito
 
   constructor(
     private ordersService: RestaurantOrdersService,
@@ -209,6 +210,24 @@ export class BillSplitComponent implements OnInit {
   async procesarPago(cuenta: CuentaComensal): Promise<void> {
     if (!this.orden) return;
 
+    // Crédito: pedir nombre del cliente antes de procesar
+    if (cuenta.forma_pago === 'credito' && !this.clienteCredito.trim()) {
+      const { value: nombre } = await Swal.fire({
+        title: 'Cobro a Crédito',
+        html: `<p class="text-muted small mb-2">Ingresa el nombre del cliente que queda a deber</p>`,
+        input: 'text',
+        inputPlaceholder: 'Nombre del cliente...',
+        inputAttributes: { autocomplete: 'off' },
+        showCancelButton: true,
+        confirmButtonText: 'Confirmar Crédito',
+        confirmButtonColor: '#6f42c1',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (v) => !v?.trim() ? 'El nombre es requerido' : null
+      });
+      if (!nombre) return;
+      this.clienteCredito = nombre.trim();
+    }
+
     try {
       const negocioId = localStorage.getItem('logos_negocio_id') || '';
 
@@ -268,8 +287,24 @@ export class BillSplitComponent implements OnInit {
                 usuario_id: usuarioId
               });
             }
+          } else if (cuenta.forma_pago === 'credito') {
+            // Crédito: NO entra a caja, se registra en cuentas_por_cobrar existente
+            const identificador = this.orden!.mesa
+              ? `Mesa ${this.orden!.mesa.numero_mesa}`
+              : `Pedido #${this.orden!.numero_pedido_dia || this.orden!.id.slice(-6).toUpperCase()}`;
+            await this.supabaseService.client
+              .from('cuentas_por_cobrar')
+              .insert({
+                negocio_id: negocioId,
+                concepto: `Restaurante ${identificador} — ${this.clienteCredito}`,
+                monto_total: cuenta.total,
+                monto_pagado: 0,
+                monto_pendiente: cuenta.total,
+                fecha_venta: new Date().toISOString().split('T')[0],
+                estado: 'pendiente'
+              });
           } else {
-            // Método simple (efectivo, tarjeta, transferencia, etc.)
+            // Método simple (efectivo, tarjeta, transferencia, cheque)
             let metodoLabel = '(Efectivo)';
             if (cuenta.forma_pago === 'tarjeta') metodoLabel = '(Tarjeta)';
             else if (cuenta.forma_pago === 'transferencia') metodoLabel = '(Transferencia)';
@@ -280,7 +315,7 @@ export class BillSplitComponent implements OnInit {
               tipo: 'venta',
               concepto: `Venta Mesa ${mesaNumero} - Orden #${ordenIdShort} ${metodoLabel}`,
               monto: cuenta.total,
-              referencia: this.orden.id,
+              referencia: this.orden!.id,
               usuario_id: usuarioId
             });
           }
