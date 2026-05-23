@@ -1,3 +1,3 @@
 {
-    "buildCommand": "ng build --configuration staging"
+    "buildCommand": "ng build --configuration production"
 }
