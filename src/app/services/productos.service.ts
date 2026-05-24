@@ -48,9 +48,11 @@ export class ProductosService {
   // Obtener categorías y sincronizar
   async cargarCategorias(): Promise<void> {
     try {
+      const negocioId = this.authService.getNegocioId();
       const { data, error } = await this.supabaseService.client
         .from('categorias')
-        .select('*');
+        .select('*')
+        .eq('negocio_id', negocioId);
 
       if (error) throw error;
 
@@ -69,6 +71,7 @@ export class ProductosService {
         return;
       }
 
+      const negocioId = this.authService.getNegocioId();
       const { data, error } = await this.supabaseService.client
         .from('productos')
         .select(`
@@ -77,6 +80,7 @@ export class ProductosService {
             nombre
           )
         `)
+        .eq('negocio_id', negocioId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -234,9 +238,11 @@ export class ProductosService {
   // Obtener productos con stock bajo
   async getProductosStockBajo(limite: number = 10): Promise<Productos[]> {
     try {
+      const negocioId = this.authService.getNegocioId();
       const { data, error } = await this.supabaseService.client
         .from('productos')
         .select('*, categorias(nombre)')
+        .eq('negocio_id', negocioId)
         .lt('stock_actual', limite);
 
       if (error) {
@@ -258,10 +264,13 @@ export class ProductosService {
   // Obtener productos por categoría
   async getProductosPorCategoria(categoriaNombre: string): Promise<Productos[]> {
     try {
+      const negocioId = this.authService.getNegocioId();
+
       // 1. Obtener ID de la categoría
       const { data: catData, error: catError } = await this.supabaseService.client
         .from('categorias')
         .select('id')
+        .eq('negocio_id', negocioId)
         .ilike('nombre', categoriaNombre)
         .single();
 
@@ -273,6 +282,7 @@ export class ProductosService {
       const { data, error } = await this.supabaseService.client
         .from('productos')
         .select('*, categorias(nombre)')
+        .eq('negocio_id', negocioId)
         .eq('categoria_id', catData.id);
 
       if (error) {
