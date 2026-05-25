@@ -218,7 +218,7 @@ export class RestaurantOrdersService {
 
       if (!orden) throw new Error('Orden no encontrada');
 
-      const numeroMesa = (orden.mesa as any)?.numero_mesa || 0;
+      const numeroMesa = (orden.mesa as any)?.numero_mesa ?? null;
 
       const kitchenItems: KitchenTicketItem[] = itemsCocina.map((item: any) => ({
         order_item_id: item.id,
