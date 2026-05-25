@@ -72,6 +72,8 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   editandoPlato: MenuItem | null = null;
   mostrarFormPlato = false;
   categoriaFiltroPlatos = '';
+  busquedaPlatos = '';
+  drawerTab: 'info' | 'acompanantes' = 'info';
 
   // Receta del plato seleccionado
   receta: Array<{ inventory_item_id: string; cantidad_requerida: number; unidad_medida: string; _nombre?: string }> = [];
@@ -401,6 +403,7 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
 
   abrirFormPlato(plato?: MenuItem): void {
     this.editandoPlato = plato || null;
+    this.drawerTab = 'info';
     this.receta = [];
     this.modificadores = [];
     this.modGruposUnicos = [];
@@ -574,6 +577,15 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   async filtrarPlatos(): Promise<void> {
     this.platos = await this.ordersService.cargarItemsAdmin(this.categoriaFiltroPlatos || undefined);
     this.cdr.detectChanges();
+  }
+
+  get platosFiltrados(): MenuItem[] {
+    const q = this.busquedaPlatos.trim().toLowerCase();
+    if (!q) return this.platos;
+    return this.platos.filter(p =>
+      p.nombre.toLowerCase().includes(q) ||
+      (p.descripcion || '').toLowerCase().includes(q)
+    );
   }
 
   async cargarReceta(menuItemId: string): Promise<void> {

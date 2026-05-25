@@ -9,6 +9,7 @@ import { ProductosService } from '../../services/productos.service';
 import { FiscalService } from '../../services/fiscal.service';
 import { NegociosService, ModuloSistema } from '../../services/negocios.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import Swal from 'sweetalert2';
@@ -76,6 +77,7 @@ export class Dashboard implements OnInit, OnDestroy {
     private fiscalService: FiscalService,
     public negociosService: NegociosService,
     private supabaseService: SupabaseService,
+    private authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) { }
@@ -452,10 +454,14 @@ export class Dashboard implements OnInit, OnDestroy {
 
   async obtenerEfectivoCaja(): Promise<number> {
     try {
+      const negocioId = this.authService.getNegocioId();
+      if (!negocioId) return 0;
+
       // 1. Intentar obtener shift activo
       let { data, error } = await this.supabaseService.client
         .from('cajas')
         .select('monto_inicial, total_ventas_efectivo, total_entradas, total_salidas, estado')
+        .eq('negocio_id', negocioId)
         .eq('estado', 'abierta')
         .order('fecha_apertura', { ascending: false })
         .limit(1)
@@ -466,6 +472,7 @@ export class Dashboard implements OnInit, OnDestroy {
         const { data: ultimoCerrado } = await this.supabaseService.client
           .from('cajas')
           .select('monto_inicial, total_ventas_efectivo, total_entradas, total_salidas, estado, monto_cierre')
+          .eq('negocio_id', negocioId)
           .eq('estado', 'cerrada')
           .order('fecha_cierre', { ascending: false })
           .limit(1)
@@ -484,7 +491,9 @@ export class Dashboard implements OnInit, OnDestroy {
 
   async obtenerCuentasPorCobrar(): Promise<number> {
     try {
-      const { data, error } = await this.supabaseService.client.from('cuentas_por_cobrar').select('monto_pendiente').eq('estado', 'pendiente');
+      const negocioId = this.authService.getNegocioId();
+      if (!negocioId) return 0;
+      const { data, error } = await this.supabaseService.client.from('cuentas_por_cobrar').select('monto_pendiente').eq('negocio_id', negocioId).eq('estado', 'pendiente');
       if (error) return 0;
       return data?.reduce((sum, cuenta) => sum + cuenta.monto_pendiente, 0) || 0;
     } catch (error) { return 0; }

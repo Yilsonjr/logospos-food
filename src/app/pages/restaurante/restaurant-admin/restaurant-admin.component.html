@@ -4,10 +4,10 @@
   <div class="ra-header mb-4">
     <div class="d-flex align-items-center gap-3">
       <a routerLink="/restaurante" class="btn btn-outline-secondary btn-sm shadow-sm d-flex align-items-center gap-1">
-        <i class="bi bi-arrow-left"></i> Volver
+        <i class="fa-solid fa-arrow-left"></i> Volver
       </a>
       <div class="ra-header-icon">
-        <i class="bi bi-gear-fill text-white fs-5"></i>
+        <i class="fa-solid fa-gear text-white fs-5"></i>
       </div>
       <div>
         <h4 class="ra-title">Configuración del Restaurante</h4>
@@ -20,27 +20,27 @@
   <div class="ra-tabs mb-4">
     @if (puedeVerTab('zonas')) {
       <button class="ra-tab" [class.active]="tabActiva==='zonas'" (click)="cargarTab('zonas')">
-        <i class="bi bi-map-fill"></i> Zonas
+        <i class="fa-solid fa-map"></i> Zonas
       </button>
     }
     @if (puedeVerTab('mesas')) {
       <button class="ra-tab" [class.active]="tabActiva==='mesas'" (click)="cargarTab('mesas')">
-        <i class="bi bi-grid-fill"></i> Mesas
+        <i class="fa-solid fa-table-cells"></i> Mesas
       </button>
     }
     @if (puedeVerTab('categorias')) {
       <button class="ra-tab" [class.active]="tabActiva==='categorias'" (click)="cargarTab('categorias')">
-        <i class="bi bi-tags-fill"></i> Categorías Menú
+        <i class="fa-solid fa-tags"></i> Categorías Menú
       </button>
     }
     @if (puedeVerTab('platos')) {
       <button class="ra-tab" [class.active]="tabActiva==='platos'" (click)="cargarTab('platos')">
-        <i class="bi bi-egg-fried"></i> Platos
+        <i class="fa-solid fa-bowl-food"></i> Platos
       </button>
     }
     @if (usaInventario && puedeVerTab('inventario')) {
       <button class="ra-tab" [class.active]="tabActiva==='inventario'" (click)="cargarTab('inventario')">
-        <i class="bi bi-boxes"></i> Inventario
+        <i class="fa-solid fa-boxes-stacked"></i> Inventario
         @if (hayStockBajo) {
           <span class="badge bg-danger ms-1">!</span>
         }
@@ -48,17 +48,17 @@
     }
     @if (usaInventario && puedeVerTab('compras')) {
       <button class="ra-tab" [class.active]="tabActiva==='compras'" (click)="cargarTab('compras')">
-        <i class="bi bi-cart-plus-fill"></i> Compras
+        <i class="fa-solid fa-cart-plus"></i> Compras
       </button>
     }
     @if (puedeVerTab('ordenes')) {
       <button class="ra-tab" [class.active]="tabActiva==='ordenes'" (click)="cargarTab('ordenes')">
-        <i class="bi bi-clock-history"></i> Historial de Órdenes
+        <i class="fa-solid fa-clock-rotate-left"></i> Historial de Órdenes
       </button>
     }
     @if (puedeVerTab('creditos')) {
       <button class="ra-tab" [class.active]="tabActiva==='creditos'" (click)="cargarTab('creditos')">
-        <i class="bi bi-credit-card-2-back"></i> Créditos
+        <i class="fa-solid fa-credit-card"></i> Créditos
         @if (totalCreditoPendiente > 0) {
           <span class="badge bg-danger ms-1" style="font-size:0.65rem">
             RD$ {{ totalCreditoPendiente | number:'1.0-0' }}
@@ -68,7 +68,7 @@
     }
     @if (puedeVerTab('impresoras')) {
       <button class="ra-tab" [class.active]="tabActiva==='impresoras'" (click)="cargarTab('impresoras')">
-        <i class="bi bi-printer-fill"></i> Impresoras
+        <i class="fa-solid fa-print"></i> Impresoras
       </button>
     }
   </div>
@@ -84,9 +84,9 @@
   @if (!cargando && tabActiva === 'zonas') {
     <div class="ra-card">
       <div class="ra-card-header">
-        <h6 class="ra-section-title"><i class="bi bi-map-fill"></i> Zonas del Restaurante</h6>
+        <h6 class="ra-section-title"><i class="fa-solid fa-map"></i> Zonas del Restaurante</h6>
         <button class="ra-btn-add" (click)="abrirFormZona()">
-          <i class="bi bi-plus-lg"></i> Nueva Zona
+          <i class="fa-solid fa-plus"></i> Nueva Zona
         </button>
       </div>
 
@@ -110,7 +110,7 @@
           </div>
           <div class="d-flex gap-2 mt-2">
             <button class="ra-btn-save" (click)="guardarZona()">
-              <i class="bi bi-check-lg"></i> Guardar
+              <i class="fa-solid fa-check"></i> Guardar
             </button>
             <button class="ra-btn-cancel" (click)="mostrarFormZona=false">Cancelar</button>
           </div>
@@ -133,10 +133,10 @@
                   <td>
                     <div class="d-flex gap-1">
                       <button class="ra-btn-icon edit" (click)="abrirFormZona(zona)" title="Editar">
-                        <i class="bi bi-pencil-fill"></i>
+                        <i class="fa-solid fa-pen"></i>
                       </button>
                       <button class="ra-btn-icon del" (click)="eliminarZona(zona)" title="Eliminar">
-                        <i class="bi bi-trash-fill"></i>
+                        <i class="fa-solid fa-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -153,9 +153,9 @@
   @if (!cargando && tabActiva === 'mesas') {
     <div class="ra-card">
       <div class="ra-card-header">
-        <h6 class="ra-section-title"><i class="bi bi-grid-fill"></i> Mesas</h6>
+        <h6 class="ra-section-title"><i class="fa-solid fa-table-cells"></i> Mesas</h6>
         <button class="ra-btn-add" (click)="abrirFormMesa()" [disabled]="zonas.length===0">
-          <i class="bi bi-plus-lg"></i> Nueva Mesa
+          <i class="fa-solid fa-plus"></i> Nueva Mesa
         </button>
       </div>
 
@@ -191,7 +191,7 @@
           </div>
           <div class="d-flex gap-2 mt-2">
             <button class="ra-btn-save" (click)="guardarMesa()">
-              <i class="bi bi-check-lg"></i> Guardar
+              <i class="fa-solid fa-check"></i> Guardar
             </button>
             <button class="ra-btn-cancel" (click)="mostrarFormMesa=false">Cancelar</button>
           </div>
@@ -202,7 +202,7 @@
       @for (zona of zonas; track zona.id) {
         <div class="ra-zona-group mb-3">
           <div class="ra-zona-label">
-            <i class="bi bi-map-fill"></i> {{ zona.nombre }}
+            <i class="fa-solid fa-map"></i> {{ zona.nombre }}
             <span class="ra-badge ms-2">{{ mesasPorZona(zona.id).length }} mesas</span>
           </div>
           <div class="ra-mesas-grid">
@@ -212,13 +212,13 @@
                 @if (mesa.nombre_mesa) {
                   <div class="ra-mesa-alias">{{ mesa.nombre_mesa }}</div>
                 }
-                <div class="ra-mesa-cap"><i class="bi bi-people-fill"></i> {{ mesa.capacidad }}</div>
+                <div class="ra-mesa-cap"><i class="fa-solid fa-people-group"></i> {{ mesa.capacidad }}</div>
                 <div class="d-flex gap-1 mt-1 justify-content-center">
                   <button class="ra-btn-icon edit xs" (click)="abrirFormMesa(mesa)" title="Editar">
-                    <i class="bi bi-pencil-fill"></i>
+                    <i class="fa-solid fa-pen"></i>
                   </button>
                   <button class="ra-btn-icon del xs" (click)="eliminarMesa(mesa)" title="Eliminar">
-                    <i class="bi bi-trash-fill"></i>
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
               </div>
@@ -237,9 +237,9 @@
   @if (!cargando && tabActiva === 'categorias') {
     <div class="ra-card">
       <div class="ra-card-header">
-        <h6 class="ra-section-title"><i class="bi bi-tags-fill"></i> Categorías del Menú</h6>
+        <h6 class="ra-section-title"><i class="fa-solid fa-tags"></i> Categorías del Menú</h6>
         <button class="ra-btn-add" (click)="abrirFormCat()">
-          <i class="bi bi-plus-lg"></i> Nueva Categoría
+          <i class="fa-solid fa-plus"></i> Nueva Categoría
         </button>
       </div>
 
@@ -275,7 +275,7 @@
           </div>
           <div class="d-flex gap-2 mt-2">
             <button class="ra-btn-save" (click)="guardarCat()">
-              <i class="bi bi-check-lg"></i> Guardar
+              <i class="fa-solid fa-check"></i> Guardar
             </button>
             <button class="ra-btn-cancel" (click)="mostrarFormCat=false">Cancelar</button>
           </div>
@@ -292,10 +292,10 @@
             </div>
             <div class="d-flex gap-1">
               <button class="ra-btn-icon edit" (click)="abrirFormCat(cat)">
-                <i class="bi bi-pencil-fill"></i>
+                <i class="fa-solid fa-pen"></i>
               </button>
               <button class="ra-btn-icon del" (click)="eliminarCat(cat)">
-                <i class="bi bi-trash-fill"></i>
+                <i class="fa-solid fa-trash"></i>
               </button>
             </div>
           </div>
@@ -323,7 +323,7 @@
           <div class="plato-form-header">
             <div class="d-flex align-items-center gap-3">
               <div class="plato-form-icon">
-                <i class="bi bi-{{ editandoPlato ? 'pencil-fill' : 'plus-lg' }}"></i>
+                <i class="fa-solid fa-{{ editandoPlato ? 'pen' : 'plus' }}"></i>
               </div>
               <div>
                 <div class="plato-form-title">
@@ -335,16 +335,31 @@
               </div>
             </div>
             <button class="plato-form-close" (click)="mostrarFormPlato=false" title="Cerrar">
-              <i class="bi bi-x-lg"></i>
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Tabs del drawer -->
+          <div class="plato-drawer-tabs">
+            <button class="plato-drawer-tab" [class.active]="drawerTab==='info'" (click)="drawerTab='info'">
+              <i class="fa-solid fa-circle-info"></i> Info del Plato
+            </button>
+            <button class="plato-drawer-tab" [class.active]="drawerTab==='acompanantes'"
+              (click)="drawerTab='acompanantes'; editandoPlato && cargarModificadores(editandoPlato.id)"
+              [disabled]="!editandoPlato">
+              <i class="fa-solid fa-sliders"></i> Acompañantes
+              @if (modificadores.length > 0) {
+                <span class="badge bg-primary rounded-pill ms-1" style="font-size:.65rem">{{ modificadores.length }}</span>
+              }
             </button>
           </div>
 
           <!-- Two-column body -->
-          <div class="plato-form-body">
+          <div class="plato-form-body" [style.display]="drawerTab==='info' ? '' : 'none'">
 
             <!-- ── COLUMNA IZQUIERDA: Imagen + Categoría ── -->
             <div class="plato-form-left">
-              <div class="pf-section-label mb-2"><i class="bi bi-image-fill"></i> Imagen</div>
+              <div class="pf-section-label mb-2"><i class="fa-solid fa-image"></i> Imagen</div>
 
               <!-- Zona de imagen -->
               <div class="plato-img-zone">
@@ -352,11 +367,11 @@
                   <img [src]="platoForm.imagen_url" alt="imagen" class="plato-img-zone-thumb"
                     onerror="this.parentElement.classList.add('piz-no-img')">
                   <button class="plato-img-zone-clear" (click)="platoForm.imagen_url=null" title="Quitar imagen">
-                    <i class="bi bi-x-lg"></i>
+                    <i class="fa-solid fa-xmark"></i>
                   </button>
                 } @else {
                   <div class="plato-img-zone-placeholder">
-                    <i class="bi bi-egg-fried"></i>
+                    <i class="fa-solid fa-bowl-food"></i>
                     <span>Sin imagen</span>
                   </div>
                 }
@@ -370,7 +385,7 @@
                   @if (subiendoImagen) {
                     <span class="spinner-border spinner-border-sm"></span>
                   } @else {
-                    <i class="bi bi-upload"></i>
+                    <i class="fa-solid fa-upload"></i>
                   }
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/gif"
                     style="display:none" (change)="subirImagenPlato($event)" [disabled]="subiendoImagen">
@@ -379,7 +394,7 @@
 
               <!-- Categoría -->
               <div class="mt-3">
-                <div class="pf-section-label mb-1"><i class="bi bi-tags-fill"></i> Categoría</div>
+                <div class="pf-section-label mb-1"><i class="fa-solid fa-tags"></i> Categoría</div>
                 <select class="form-select form-select-sm" [(ngModel)]="platoForm.categoria_id">
                   @for (cat of categorias; track cat.id) {
                     <option [value]="cat.id">{{ cat.icono }} {{ cat.nombre }}</option>
@@ -393,7 +408,7 @@
 
               <!-- Sección: Información -->
               <div class="pf-section">
-                <div class="pf-section-label"><i class="bi bi-info-circle-fill"></i> Información básica</div>
+                <div class="pf-section-label"><i class="fa-solid fa-circle-info"></i> Información básica</div>
                 <div class="row g-2">
                   <div class="col-12">
                     <label class="ra-label">Nombre del plato *</label>
@@ -415,7 +430,7 @@
 
               <!-- Sección: Precio y tiempo -->
               <div class="pf-section">
-                <div class="pf-section-label"><i class="bi bi-cash-stack"></i> Precio y tiempo</div>
+                <div class="pf-section-label"><i class="fa-solid fa-money-bill-wave"></i> Precio y tiempo</div>
                 <div class="row g-2">
                   <div class="col-6">
                     <label class="ra-label">Precio (RD$) *</label>
@@ -438,7 +453,7 @@
                   @if ((platoForm.costo_estimado ?? 0) > 0 && platoForm.precio > 0) {
                     <div class="col-6 d-flex align-items-end pb-1">
                       <div class="pf-margen-badge">
-                        <i class="bi bi-graph-up-arrow me-1"></i>
+                        <i class="fa-solid fa-chart-line me-1"></i>
                         Margen: {{ ((platoForm.precio - (platoForm.costo_estimado ?? 0)) / platoForm.precio * 100) | number:'1.0-0' }}%
                       </div>
                     </div>
@@ -448,7 +463,7 @@
 
               <!-- Sección: Opciones / toggles -->
               <div class="pf-section">
-                <div class="pf-section-label"><i class="bi bi-toggles"></i> Configuración</div>
+                <div class="pf-section-label"><i class="fa-solid fa-toggle-on"></i> Configuración</div>
                 <div class="pf-toggles">
                   <label class="pf-toggle-item">
                     <input class="form-check-input" type="checkbox" [(ngModel)]="platoForm.disponible">
@@ -481,23 +496,25 @@
             </div>
           </div>
 
-          <!-- Footer de acciones -->
+          <!-- Footer de acciones (solo en tab info) -->
+          @if (drawerTab === 'info') {
           <div class="plato-form-footer">
             <button class="ra-btn-cancel" (click)="mostrarFormPlato=false">Cancelar</button>
             <button class="ra-btn-save" (click)="guardarPlato()">
-              <i class="bi bi-check-lg"></i> Guardar plato
+              <i class="fa-solid fa-check"></i> Guardar plato
             </button>
           </div>
+          }
         </div>
 
-        <!-- ── Paneles adicionales (solo al editar) ── -->
-        @if (editandoPlato) {
+        <!-- ── Paneles adicionales: tab Acompañantes ── -->
+        @if (editandoPlato && drawerTab === 'acompanantes') {
 
           <!-- Panel de receta -->
           @if (usaInventario && platoForm.requiere_inventario) {
             <div class="ra-receta-panel mb-3">
               <div class="d-flex align-items-center gap-2 mb-2">
-                <i class="bi bi-journal-text text-primary"></i>
+                <i class="fa-solid fa-book-open text-primary"></i>
                 <span class="fw-bold small">Ingredientes de la receta</span>
               </div>
               @if (receta.length > 0) {
@@ -518,7 +535,7 @@
                         <td class="text-muted small">{{ ing.unidad_medida }}</td>
                         <td class="text-center">
                           <button class="btn btn-sm p-0 text-danger" (click)="quitarIngredienteReceta($index)">
-                            <i class="bi bi-trash3"></i>
+                            <i class="fa-solid fa-trash"></i>
                           </button>
                         </td>
                       </tr>
@@ -544,12 +561,12 @@
                     min="0.001" step="0.001" [(ngModel)]="recetaItemForm.cantidad_requerida">
                 </div>
                 <button class="btn btn-outline-primary btn-sm" (click)="agregarIngredienteReceta()">
-                  <i class="bi bi-plus-circle"></i> Agregar
+                  <i class="fa-solid fa-circle-plus"></i> Agregar
                 </button>
               </div>
               <button class="btn btn-primary btn-sm" (click)="guardarRecetaPlato()" [disabled]="guardandoReceta">
                 @if (guardandoReceta) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                <i class="bi bi-save"></i> Guardar receta
+                <i class="fa-solid fa-floppy-disk"></i> Guardar receta
               </button>
             </div>
           }
@@ -558,7 +575,7 @@
           <div class="ra-mods-panel mb-4">
             <div class="ra-mods-header">
               <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-sliders2 text-primary"></i>
+                <i class="fa-solid fa-sliders text-primary"></i>
                 <span class="fw-semibold small">Acompañantes y Opciones</span>
                 @if (modificadores.length > 0) {
                   <span class="badge bg-primary rounded-pill">{{ modificadores.length }}</span>
@@ -575,7 +592,7 @@
                 @for (grupo of modificadoresPorGrupo; track grupo.grupo) {
                   <div class="mod-grupo-admin">
                     <div class="mod-grupo-admin-label">
-                      <i class="bi bi-collection-fill me-1"></i>{{ grupo.grupo }}
+                      <i class="fa-solid fa-layer-group me-1"></i>{{ grupo.grupo }}
                       <span class="text-muted ms-1" style="font-size:.7rem">
                         · {{ grupo.items[0]?.obligatorio ? 'Requerido' : 'Opcional' }}
                         @if ((grupo.items[0]?.max_seleccion ?? 0) > 1) {
@@ -593,7 +610,7 @@
                             <span class="mod-chip-extra">+RD${{ mod.precio_adicional }}</span>
                           }
                           <button class="mod-chip-del" (click)="eliminarModificador(mod.id)" title="Eliminar">
-                            <i class="bi bi-x-lg"></i>
+                            <i class="fa-solid fa-xmark"></i>
                           </button>
                         </div>
                       }
@@ -603,7 +620,7 @@
               </div>
             } @else {
               <p class="text-muted small mb-0 mt-2">
-                <i class="bi bi-lightbulb me-1 text-warning"></i>Sin opciones aún. Agrega guarniciones, salsas, tamaños…
+                <i class="fa-solid fa-lightbulb me-1 text-warning"></i>Sin opciones aún. Agrega guarniciones, salsas, tamaños…
               </p>
             }
             <div class="mod-add-form mt-2">
@@ -639,7 +656,7 @@
                   <button class="btn btn-primary btn-sm px-3" (click)="agregarModificador()"
                     [disabled]="guardandoMod || !modForm.grupo_nombre.trim() || !modForm.nombre.trim()">
                     @if (guardandoMod) { <span class="spinner-border spinner-border-sm"></span> }
-                    @else { <i class="bi bi-plus-lg"></i> Agregar }
+                    @else { <i class="fa-solid fa-plus"></i> Agregar }
                   </button>
                 </div>
               </div>
@@ -656,12 +673,18 @@
     <div class="ra-card">
       <div class="ra-card-header">
         <h6 class="ra-section-title">
-          <i class="bi bi-egg-fried"></i> Platos del Menú
+          <i class="fa-solid fa-utensils"></i> Platos del Menú
           @if (platos.length > 0) {
-            <span class="badge bg-secondary ms-2" style="font-size:.7rem;font-weight:500">{{ platos.length }}</span>
+            <span class="badge bg-secondary ms-2" style="font-size:.7rem;font-weight:500">{{ platosFiltrados.length }}/{{ platos.length }}</span>
           }
         </h6>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <div class="platos-search-wrap">
+            <i class="fa-solid fa-magnifying-glass platos-search-icon"></i>
+            <input class="form-control form-control-sm platos-search-input"
+              [(ngModel)]="busquedaPlatos"
+              placeholder="Buscar plato…">
+          </div>
           <select class="form-select form-select-sm" style="width:180px"
             [(ngModel)]="categoriaFiltroPlatos" (change)="filtrarPlatos()">
             <option value="">Todas las categorías</option>
@@ -670,7 +693,7 @@
             }
           </select>
           <button class="ra-btn-add" (click)="abrirFormPlato()" [disabled]="categorias.length===0">
-            <i class="bi bi-plus-lg"></i> Nuevo Plato
+            <i class="fa-solid fa-plus"></i> Nuevo Plato
           </button>
         </div>
       </div>
@@ -683,9 +706,12 @@
         <div class="ra-empty mt-2">Sin platos aún. Usa <strong>Nuevo Plato</strong> para empezar.</div>
       }
 
-      @if (platos.length > 0) {
+      @if (platos.length > 0 && platosFiltrados.length === 0) {
+        <div class="ra-empty mt-2">Sin resultados para "<strong>{{ busquedaPlatos }}</strong>".</div>
+      }
+      @if (platosFiltrados.length > 0) {
         <div class="platos-grid">
-          @for (plato of platos; track trackById($index, plato)) {
+          @for (plato of platosFiltrados; track trackById($index, plato)) {
             <div class="plato-card" [class.plato-card-off]="!plato.disponible">
 
               <!-- Imagen -->
@@ -694,14 +720,18 @@
                   <img [src]="plato.imagen_url" [alt]="plato.nombre"
                     onerror="this.style.display='none'">
                 }
-                <div class="plato-card-img-ph"><i class="bi bi-egg-fried"></i></div>
+                <div class="plato-card-img-ph"><i class="fa-solid fa-bowl-food"></i></div>
                 <span class="plato-card-cat-badge">{{ nombreCategoria(plato.categoria_id) }}</span>
                 <!-- Toggle disponible rápido -->
                 <button class="plato-card-toggle"
                   [class.plato-card-toggle-on]="plato.disponible"
                   (click)="toggleDisponiblePlato(plato)"
                   [title]="plato.disponible ? 'Desactivar' : 'Activar'">
-                  <i class="bi bi-{{ plato.disponible ? 'eye-fill' : 'eye-slash-fill' }}"></i>
+                  @if (plato.disponible) {
+                    <i class="fa-solid fa-eye"></i>
+                  } @else {
+                    <i class="fa-solid fa-eye-slash"></i>
+                  }
                 </button>
               </div>
 
@@ -713,19 +743,19 @@
                 }
                 <div class="plato-card-meta">
                   <span class="plato-card-precio">RD$ {{ plato.precio | number:'1.0-0' }}</span>
-                  <span class="plato-card-tiempo"><i class="bi bi-clock"></i> {{ plato.tiempo_preparacion_minutos }}m</span>
+                  <span class="plato-card-tiempo"><i class="fa-solid fa-clock"></i> {{ plato.tiempo_preparacion_minutos }}m</span>
                 </div>
                 <div class="plato-card-chips">
                   @if (plato.disponible) {
-                    <span class="pchip pchip-ok"><i class="bi bi-check2-circle"></i> Disponible</span>
+                    <span class="pchip pchip-ok"><i class="fa-solid fa-circle-check"></i> Disponible</span>
                   } @else {
-                    <span class="pchip pchip-off"><i class="bi bi-eye-slash"></i> Inactivo</span>
+                    <span class="pchip pchip-off"><i class="fa-solid fa-eye-slash"></i> Inactivo</span>
                   }
                   @if (plato.requiere_inventario && usaInventario) {
-                    <span class="pchip pchip-inv"><i class="bi bi-boxes"></i> Inventario</span>
+                    <span class="pchip pchip-inv"><i class="fa-solid fa-boxes-stacked"></i> Inventario</span>
                   }
                   @if (!plato.enviar_a_cocina) {
-                    <span class="pchip pchip-nokds"><i class="bi bi-cup-straw"></i> Sin KDS</span>
+                    <span class="pchip pchip-nokds"><i class="fa-solid fa-glass-water"></i> Sin KDS</span>
                   }
                 </div>
               </div>
@@ -733,13 +763,13 @@
               <!-- Acciones -->
               <div class="plato-card-actions">
                 <button class="plato-card-btn-edit" (click)="abrirFormPlato(plato)" title="Editar plato">
-                  <i class="bi bi-pencil-fill"></i> Editar
+                  <i class="fa-solid fa-pen"></i> Editar
                 </button>
                 <button class="plato-card-btn-dup" (click)="duplicarPlato(plato)" title="Duplicar plato">
-                  <i class="bi bi-copy"></i>
+                  <i class="fa-solid fa-copy"></i>
                 </button>
                 <button class="plato-card-btn-del" (click)="eliminarPlato(plato)" title="Eliminar plato">
-                  <i class="bi bi-trash-fill"></i>
+                  <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
 
@@ -763,20 +793,20 @@
           <button class="btn" [class.btn-dark]="invSubTab==='items'"
             [class.btn-outline-secondary]="invSubTab!=='items'"
             (click)="cambiarInvSubTab('items')">
-            <i class="bi bi-boxes me-1"></i>Insumos / Bebidas
+            <i class="fa-solid fa-boxes-stacked me-1"></i>Insumos / Bebidas
           </button>
           <button class="btn" [class.btn-dark]="invSubTab==='movimientos'"
             [class.btn-outline-secondary]="invSubTab!=='movimientos'"
             (click)="cambiarInvSubTab('movimientos')">
-            <i class="bi bi-clock-history me-1"></i>Movimientos
+            <i class="fa-solid fa-clock-rotate-left me-1"></i>Movimientos
           </button>
         </div>
         <div class="d-flex gap-2">
           <button class="ra-btn-add secondary" (click)="abrirFormEntrada()">
-            <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrada
+            <i class="fa-solid fa-download me-1"></i>Registrar Entrada
           </button>
           <button class="ra-btn-add" (click)="abrirFormInv()">
-            <i class="bi bi-plus-lg me-1"></i>Nuevo Insumo
+            <i class="fa-solid fa-plus me-1"></i>Nuevo Insumo
           </button>
         </div>
       </div>
@@ -784,7 +814,7 @@
       <!-- Stock bajo alerta -->
       @if (hayStockBajo) {
         <div class="alert alert-warning d-flex align-items-center gap-2 py-2 mb-3">
-          <i class="bi bi-exclamation-triangle-fill"></i>
+          <i class="fa-solid fa-triangle-exclamation"></i>
           <span>Hay insumos con stock bajo el mínimo. Revisa la columna <strong>Stock</strong>.</span>
         </div>
       }
@@ -801,7 +831,7 @@
                 <!-- Header -->
                 <div class="inv-card-head">
                   <div class="inv-card-icon" [class.inv-icon-danger]="item.stock_bajo" [class.inv-icon-ok]="!item.stock_bajo">
-                    <i class="bi bi-box-seam"></i>
+                    <i class="fa-solid fa-box"></i>
                   </div>
                   <div class="inv-card-title-wrap">
                     <span class="inv-card-nombre">{{ item.nombre }}</span>
@@ -809,7 +839,7 @@
                   </div>
                   @if (item.stock_bajo) {
                     <span class="inv-alerta" title="Stock bajo el mínimo">
-                      <i class="bi bi-exclamation-triangle-fill"></i>
+                      <i class="fa-solid fa-triangle-exclamation"></i>
                     </span>
                   }
                 </div>
@@ -838,11 +868,11 @@
                   <div class="inv-stat-item">
                     @if (usosPorInsumo[item.id]?.length) {
                       <span class="inv-en-menu" [title]="usosPorInsumo[item.id].join(', ')">
-                        <i class="bi bi-egg-fried me-1"></i>{{ usosLabel(item.id) }}
+                        <i class="fa-solid fa-bowl-food me-1"></i>{{ usosLabel(item.id) }}
                       </span>
                     } @else {
                       <button class="inv-crear-btn" (click)="abrirWizardProducto(item)">
-                        <i class="bi bi-plus-circle me-1"></i>Crear en menú
+                        <i class="fa-solid fa-circle-plus me-1"></i>Crear en menú
                       </button>
                     }
                   </div>
@@ -851,13 +881,13 @@
                 <!-- Acciones -->
                 <div class="inv-card-actions">
                   <button class="inv-action-btn entrada" (click)="abrirFormEntrada(item)" title="Registrar entrada">
-                    <i class="bi bi-box-arrow-in-down"></i> Entrada
+                    <i class="fa-solid fa-download"></i> Entrada
                   </button>
                   <button class="inv-action-btn edit" (click)="abrirFormInv(item)" title="Editar">
-                    <i class="bi bi-pencil-fill"></i>
+                    <i class="fa-solid fa-pen"></i>
                   </button>
                   <button class="inv-action-btn del" (click)="eliminarInv(item)" title="Eliminar">
-                    <i class="bi bi-trash-fill"></i>
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
 
@@ -917,7 +947,7 @@
           <div class="ra-modal-header">
             <h6>
               <span class="ra-modal-header-icon" style="background:rgba(255,255,255,.12)">
-                <i class="bi bi-box-seam"></i>
+                <i class="fa-solid fa-box"></i>
               </span>
               {{ editandoInv ? 'Editar insumo' : 'Nuevo insumo' }}
             </h6>
@@ -931,14 +961,14 @@
             <div class="row g-3 mb-3">
               <div class="col-8">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-tag me-1"></i>Nombre *</label>
+                  <label class="ra-label"><i class="fa-solid fa-tag me-1"></i>Nombre *</label>
                   <input class="form-control" [(ngModel)]="invForm.nombre"
                     placeholder="Coca-Cola, Harina, Pollo…" autofocus>
                 </div>
               </div>
               <div class="col-4">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-rulers me-1"></i>Unidad *</label>
+                  <label class="ra-label"><i class="fa-solid fa-ruler me-1"></i>Unidad *</label>
                   <select class="form-select" [(ngModel)]="invForm.unidad_medida">
                     @for (u of unidades; track u) {
                       <option [value]="u">{{ u }}</option>
@@ -953,19 +983,19 @@
             <div class="row g-3 mb-3">
               <div class="col-4">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-archive me-1"></i>Stock actual</label>
+                  <label class="ra-label"><i class="fa-solid fa-box-archive me-1"></i>Stock actual</label>
                   <input type="number" class="form-control" [(ngModel)]="invForm.cantidad_actual" min="0" step="0.001">
                 </div>
               </div>
               <div class="col-4">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-exclamation-triangle me-1"></i>Stock mínimo</label>
+                  <label class="ra-label"><i class="fa-solid fa-triangle-exclamation me-1"></i>Stock mínimo</label>
                   <input type="number" class="form-control" [(ngModel)]="invForm.cantidad_minima" min="0" step="0.001">
                 </div>
               </div>
               <div class="col-4">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-currency-dollar me-1"></i>Costo unit. (RD$)</label>
+                  <label class="ra-label"><i class="fa-solid fa-dollar-sign me-1"></i>Costo unit. (RD$)</label>
                   <input type="number" class="form-control" [(ngModel)]="invForm.costo_unitario" min="0" step="0.01">
                 </div>
               </div>
@@ -976,13 +1006,13 @@
             <div class="row g-3">
               <div class="col-6">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-truck me-1"></i>Proveedor</label>
+                  <label class="ra-label"><i class="fa-solid fa-truck me-1"></i>Proveedor</label>
                   <input class="form-control" [(ngModel)]="invForm.proveedor" placeholder="Nombre del proveedor">
                 </div>
               </div>
               <div class="col-6">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-geo-alt me-1"></i>Ubicación</label>
+                  <label class="ra-label"><i class="fa-solid fa-location-dot me-1"></i>Ubicación</label>
                   <input class="form-control" [(ngModel)]="invForm.ubicacion" placeholder="Bodega, Nevera, Almacén…">
                 </div>
               </div>
@@ -994,7 +1024,7 @@
             <button class="btn btn-light btn-sm px-3" (click)="mostrarFormInv=false">Cancelar</button>
             <button class="btn btn-primary btn-sm px-4 fw-bold" (click)="guardarInv()" [disabled]="cargando">
               @if (cargando) { <span class="spinner-border spinner-border-sm me-1"></span> }
-              <i class="bi bi-check-lg me-1"></i>
+              <i class="fa-solid fa-check me-1"></i>
               {{ editandoInv ? 'Actualizar' : 'Guardar insumo' }}
             </button>
           </div>
@@ -1011,7 +1041,7 @@
           <div class="ra-modal-header" style="background:linear-gradient(135deg,#065f46,#047857)">
             <h6>
               <span class="ra-modal-header-icon" style="background:rgba(255,255,255,.15)">
-                <i class="bi bi-box-arrow-in-down"></i>
+                <i class="fa-solid fa-download"></i>
               </span>
               Registrar Entrada de Stock
             </h6>
@@ -1022,7 +1052,7 @@
             <div class="row g-3">
               <div class="col-12">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-box-seam me-1"></i>Insumo / Bebida *</label>
+                  <label class="ra-label"><i class="fa-solid fa-box me-1"></i>Insumo / Bebida *</label>
                   <select class="form-select" [(ngModel)]="entradaForm.inventory_item_id">
                     <option value="">— Seleccionar insumo —</option>
                     @for (item of inventarioItems; track item.id) {
@@ -1035,14 +1065,14 @@
               </div>
               <div class="col-6">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-plus-circle me-1"></i>Cantidad a ingresar *</label>
+                  <label class="ra-label"><i class="fa-solid fa-circle-plus me-1"></i>Cantidad a ingresar *</label>
                   <input type="number" class="form-control"
                     [(ngModel)]="entradaForm.cantidad" min="0.001" step="0.001" placeholder="0">
                 </div>
               </div>
               <div class="col-6">
                 <div class="ra-field-group">
-                  <label class="ra-label"><i class="bi bi-chat-left-text me-1"></i>Razón</label>
+                  <label class="ra-label"><i class="fa-solid fa-comment me-1"></i>Razón</label>
                   <input class="form-control" [(ngModel)]="entradaForm.razon"
                     placeholder="Compra, donación…">
                 </div>
@@ -1054,7 +1084,7 @@
             <button class="btn btn-light btn-sm px-3" (click)="mostrarFormEntrada=false">Cancelar</button>
             <button class="btn btn-success btn-sm px-4 fw-bold" (click)="guardarEntrada()" [disabled]="cargando">
               @if (cargando) { <span class="spinner-border spinner-border-sm me-1"></span> }
-              <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrada
+              <i class="fa-solid fa-download me-1"></i>Registrar Entrada
             </button>
           </div>
 
@@ -1068,7 +1098,7 @@
           <div class="ra-modal" style="max-width:480px" (click)="$event.stopPropagation()">
             <div class="ra-modal-header" style="background:#0d6efd">
               <h6 class="mb-0">
-                <i class="bi bi-bag-plus me-2"></i>
+                <i class="fa-solid fa-bag-shopping me-2"></i>
                 Crear Producto del Menú — {{ wizardInsumoOrigen.nombre }}
               </h6>
               <button class="btn-close btn-close-white" (click)="mostrarWizardProducto=false"></button>
@@ -1100,7 +1130,7 @@
                 </div>
               </div>
               <div class="alert alert-info mt-3 mb-0 small py-2">
-                <i class="bi bi-info-circle me-1"></i>
+                <i class="fa-solid fa-circle-info me-1"></i>
                 Stock actual: <strong>{{ wizardInsumoOrigen.cantidad_actual | number:'1.0-2' }}
                 {{ wizardInsumoOrigen.unidad_medida }}</strong>
               </div>
@@ -1109,7 +1139,7 @@
               <button class="btn btn-sm btn-outline-secondary" (click)="mostrarWizardProducto=false">Cancelar</button>
               <button class="btn btn-sm btn-primary" (click)="guardarProductoVendible()" [disabled]="guardandoProducto">
                 @if (guardandoProducto) { <span class="spinner-border spinner-border-sm me-1"></span> }
-                <i class="bi bi-bag-plus me-1"></i>Crear Producto
+                <i class="fa-solid fa-bag-shopping me-1"></i>Crear Producto
               </button>
             </div>
           </div>
@@ -1121,15 +1151,15 @@
   @if (!cargando && tabActiva === 'compras') {
     <div class="ra-card">
       <div class="ra-card-header">
-        <h6 class="ra-section-title"><i class="bi bi-cart-plus-fill text-success"></i> Compras de Insumos</h6>
+        <h6 class="ra-section-title"><i class="fa-solid fa-cart-plus text-success"></i> Compras de Insumos</h6>
         <button class="ra-btn-add" (click)="abrirModalCompra()">
-          <i class="bi bi-plus-lg"></i> Nueva Compra
+          <i class="fa-solid fa-plus"></i> Nueva Compra
         </button>
       </div>
 
       @if (!historialCompras.length) {
         <div class="text-center py-5 text-muted">
-          <i class="bi bi-cart-x" style="font-size:2.5rem;opacity:.35"></i>
+          <i class="fa-solid fa-cart-shopping" style="font-size:2.5rem;opacity:.35"></i>
           <p class="mt-2 small">No hay compras registradas todavía.</p>
           <button class="btn btn-sm btn-primary mt-1" (click)="abrirModalCompra()">Registrar primera compra</button>
         </div>
@@ -1150,7 +1180,11 @@
               @for (compra of historialCompras; track compra.id) {
                 <tr class="compra-row" (click)="toggleDetalleCompra(compra.id)" style="cursor:pointer">
                   <td>
-                    <i class="bi" [class.bi-chevron-down]="compraDetalleAbierta === compra.id" [class.bi-chevron-right]="compraDetalleAbierta !== compra.id" style="font-size:.75rem;color:#6b7280"></i>
+                    @if (compraDetalleAbierta === compra.id) {
+                    <i class="fa-solid fa-chevron-down" style="font-size:.75rem;color:#6b7280"></i>
+                  } @else {
+                    <i class="fa-solid fa-chevron-right" style="font-size:.75rem;color:#6b7280"></i>
+                  }
                   </td>
                   <td class="small">{{ formatearFecha(compra.fecha) }}</td>
                   <td class="fw-semibold small">{{ compra.proveedor }}</td>
@@ -1183,7 +1217,7 @@
                           </tbody>
                         </table>
                         @if (compra.notas) {
-                          <div class="px-3 py-2 small text-muted border-top"><i class="bi bi-chat-left-text me-1"></i>{{ compra.notas }}</div>
+                          <div class="px-3 py-2 small text-muted border-top"><i class="fa-solid fa-comment me-1"></i>{{ compra.notas }}</div>
                         }
                       </div>
                     </td>
@@ -1201,8 +1235,8 @@
       <div class="ra-modal-overlay" (click)="cerrarModalCompra()">
         <div class="ra-modal" style="max-width:680px" (click)="$event.stopPropagation()">
           <div class="ra-modal-header">
-            <h6 class="ra-modal-title"><i class="bi bi-cart-plus-fill text-success me-2"></i>Registrar Compra de Insumos</h6>
-            <button class="btn btn-sm btn-light rounded-circle" (click)="cerrarModalCompra()"><i class="bi bi-x-lg"></i></button>
+            <h6 class="ra-modal-title"><i class="fa-solid fa-cart-plus text-success me-2"></i>Registrar Compra de Insumos</h6>
+            <button class="btn btn-sm btn-light rounded-circle" (click)="cerrarModalCompra()"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <div class="ra-modal-body">
             <!-- Datos generales -->
@@ -1225,7 +1259,7 @@
             <div class="mb-2 d-flex align-items-center justify-content-between">
               <span class="fw-semibold small text-muted">Insumos a ingresar</span>
               <button class="btn btn-xs btn-outline-success" (click)="agregarLineaCompra()">
-                <i class="bi bi-plus-lg"></i> Agregar línea
+                <i class="fa-solid fa-plus"></i> Agregar línea
               </button>
             </div>
 
@@ -1253,7 +1287,7 @@
                     <span class="small fw-bold text-success">{{ formatearMoneda(item.cantidad * item.precio_unitario) }}</span>
                   </div>
                   <button class="btn btn-xs btn-outline-danger" style="margin-top:1.4rem" (click)="quitarLineaCompra(i)" [disabled]="compraForm.items.length === 1">
-                    <i class="bi bi-trash3"></i>
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
               }
@@ -1269,7 +1303,7 @@
             <button class="btn btn-light btn-sm" (click)="cerrarModalCompra()">Cancelar</button>
             <button class="btn btn-success btn-sm fw-bold px-4" (click)="guardarCompra()" [disabled]="guardandoCompra">
               @if (guardandoCompra) { <span class="spinner-border spinner-border-sm me-1"></span> }
-              <i class="bi bi-check-lg me-1"></i> Registrar Compra
+              <i class="fa-solid fa-check me-1"></i> Registrar Compra
             </button>
           </div>
         </div>
@@ -1281,12 +1315,12 @@
   @if (!cargando && tabActiva === 'ordenes') {
     <div class="ra-card">
       <div class="ra-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <h6 class="ra-section-title mb-0"><i class="bi bi-clock-history text-primary"></i> Historial de Órdenes y Facturado</h6>
+        <h6 class="ra-section-title mb-0"><i class="fa-solid fa-clock-rotate-left text-primary"></i> Historial de Órdenes y Facturado</h6>
         
         <!-- Filtros de búsqueda -->
         <div class="d-flex align-items-center gap-2 flex-grow-1 flex-sm-grow-0" style="min-width: 320px;">
           <div class="input-group input-group-sm">
-            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <span class="input-group-text bg-light"><i class="fa-solid fa-magnifying-glass"></i></span>
             <input type="text" class="form-control" placeholder="Buscar ID de orden o mesa..." [(ngModel)]="busquedaOrden">
           </div>
           
@@ -1300,7 +1334,7 @@
 
       @if (ordenesFiltradas.length === 0) {
         <div class="ra-empty py-5 text-center text-muted">
-          <i class="bi bi-receipt-cutoff display-4 d-block mb-3 text-secondary opacity-50"></i>
+          <i class="fa-solid fa-receipt display-4 d-block mb-3 text-secondary opacity-50"></i>
           <span>No se encontraron órdenes registradas en este período.</span>
         </div>
       } @else {
@@ -1324,7 +1358,7 @@
                   <td class="font-monospace text-secondary small fw-bold">#{{ orden.id.substring(0, 8) }}</td>
                   <td>
                     <span class="badge bg-secondary-subtle text-secondary px-2 py-1 fw-bold fs-7">
-                      <i class="bi bi-hash"></i> Mesa {{ orden.mesa?.numero_mesa || 'N/A' }}
+                      <i class="fa-solid fa-hashtag"></i> Mesa {{ orden.mesa?.numero_mesa || 'N/A' }}
                     </span>
                   </td>
                   <td>
@@ -1347,7 +1381,7 @@
                       @if (cargandoDetalle) {
                         <span class="spinner-border spinner-border-sm"></span>
                       } @else {
-                        <i class="bi bi-eye-fill"></i> Detalle
+                        <i class="fa-solid fa-eye"></i> Detalle
                       }
                     </button>
                   </td>
@@ -1364,7 +1398,7 @@
       <div class="ra-modal-overlay">
         <div class="ra-modal" style="max-width: 600px;">
           <div class="ra-modal-header d-flex align-items-center justify-content-between bg-dark text-white p-3">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Detalle de Orden #{{ ordenSeleccionada.id.substring(0, 8) }}</h6>
+            <h6 class="mb-0 fw-bold"><i class="fa-solid fa-receipt me-2"></i>Detalle de Orden #{{ ordenSeleccionada.id.substring(0, 8) }}</h6>
             <button class="btn-close btn-close-white" (click)="ordenSeleccionada = null"></button>
           </div>
           <div class="ra-modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
@@ -1372,7 +1406,7 @@
             <div class="row mb-4 border-bottom pb-3 g-2">
               <div class="col-6">
                 <span class="text-muted d-block small">Mesa:</span>
-                <span class="fw-bold text-dark"><i class="bi bi-hash"></i> Mesa {{ ordenSeleccionada.mesa?.numero_mesa || 'N/A' }}</span>
+                <span class="fw-bold text-dark"><i class="fa-solid fa-hashtag"></i> Mesa {{ ordenSeleccionada.mesa?.numero_mesa || 'N/A' }}</span>
               </div>
               <div class="col-6">
                 <span class="text-muted d-block small">Estado:</span>
@@ -1393,7 +1427,7 @@
             </div>
 
             <!-- Items de la orden -->
-            <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="bi bi-egg-fried me-1"></i> Artículos Servidos</h6>
+            <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="fa-solid fa-bowl-food me-1"></i> Artículos Servidos</h6>
             <div class="list-group list-group-flush mb-4">
               @for (item of ordenSeleccionada.items; track item.id) {
                 <div class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-center">
@@ -1443,7 +1477,7 @@
 
             <!-- Información del pago -->
             @if (ordenSeleccionada.pagos?.length > 0) {
-              <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="bi bi-credit-card me-1"></i> Detalles de Pago</h6>
+              <h6 class="fw-bold mb-2 small text-uppercase text-secondary tracking-wider"><i class="fa-solid fa-credit-card me-1"></i> Detalles de Pago</h6>
               <div class="list-group list-group-flush">
                 @for (pago of ordenSeleccionada.pagos; track pago.id) {
                   <div class="list-group-item px-0 py-2.5 d-flex justify-content-between align-items-center">
@@ -1463,7 +1497,7 @@
             <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
               (click)="reimprimirTicket(ordenSeleccionada)"
               title="Reimprimir ticket de esta orden">
-              <i class="bi bi-printer-fill"></i> Reimprimir Ticket
+              <i class="fa-solid fa-print"></i> Reimprimir Ticket
             </button>
             <button class="btn btn-sm btn-secondary" (click)="ordenSeleccionada = null">Cerrar</button>
           </div>
@@ -1477,7 +1511,7 @@
     <div class="ra-card">
       <div class="ra-card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
         <h6 class="ra-section-title mb-0">
-          <i class="bi bi-credit-card-2-back text-danger"></i> Cuentas por Cobrar
+          <i class="fa-solid fa-credit-card text-danger"></i> Cuentas por Cobrar
         </h6>
         <div class="d-flex align-items-center gap-2">
           <select class="form-select form-select-sm" style="max-width:160px" [(ngModel)]="filtroCreditoEstado" (change)="cdr.detectChanges()">
@@ -1488,7 +1522,7 @@
             <option value="vencida">Vencidos</option>
           </select>
           <button class="btn btn-sm btn-outline-secondary" (click)="cargarCreditos()">
-            <i class="bi bi-arrow-clockwise"></i>
+            <i class="fa-solid fa-arrows-rotate"></i>
           </button>
         </div>
       </div>
@@ -1496,14 +1530,14 @@
       <!-- Resumen -->
       @if (totalCreditoPendiente > 0) {
         <div class="alert alert-warning d-flex align-items-center gap-2 mx-3 mt-3 mb-0 py-2">
-          <i class="bi bi-exclamation-triangle-fill"></i>
+          <i class="fa-solid fa-triangle-exclamation"></i>
           <span class="small fw-bold">Total pendiente por cobrar: RD$ {{ totalCreditoPendiente | number:'1.2-2' }}</span>
         </div>
       }
 
       @if (creditosFiltrados.length === 0) {
         <div class="ra-empty py-5 text-center text-muted">
-          <i class="bi bi-check-circle display-4 d-block mb-3 text-success opacity-50"></i>
+          <i class="fa-solid fa-circle-check display-4 d-block mb-3 text-success opacity-50"></i>
           <span>No hay cuentas en este estado.</span>
         </div>
       } @else {
@@ -1548,7 +1582,7 @@
                   <td>
                     @if (c.estado !== 'pagada') {
                       <button class="btn btn-xs btn-success shadow-sm" (click)="abrirAbono(c)">
-                        <i class="bi bi-cash-coin"></i> Abonar
+                        <i class="fa-solid fa-coins"></i> Abonar
                       </button>
                     }
                     @if (c.abonos?.length > 0) {
@@ -1568,7 +1602,7 @@
       <div class="ra-modal-overlay">
         <div class="ra-modal" style="max-width:420px">
           <div class="ra-modal-header d-flex align-items-center justify-content-between bg-success text-white p-3">
-            <h6 class="mb-0 fw-bold"><i class="bi bi-cash-coin me-2"></i>Registrar Abono</h6>
+            <h6 class="mb-0 fw-bold"><i class="fa-solid fa-coins me-2"></i>Registrar Abono</h6>
             <button class="btn-close btn-close-white" (click)="creditoSeleccionado = null"></button>
           </div>
           <div class="ra-modal-body p-4">
@@ -1609,7 +1643,7 @@
             <button class="btn btn-sm btn-success fw-bold" (click)="registrarAbono()"
               [disabled]="procesandoAbono || abonoMonto <= 0">
               @if (procesandoAbono) { <span class="spinner-border spinner-border-sm me-1"></span> }
-              <i class="bi bi-check-lg"></i> Confirmar Abono
+              <i class="fa-solid fa-check"></i> Confirmar Abono
             </button>
           </div>
         </div>
