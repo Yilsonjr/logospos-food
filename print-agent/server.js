@@ -83,65 +83,47 @@ function readBody(req) {
 
 function printUsb(printerName, bytes, copies = 1) {
   return new Promise((resolve, reject) => {
-    const b64 = Buffer.from(bytes).toString('base64');
+    // Escribir archivo temporal binario
+    const tmpFile = path.join(os.tmpdir(), `logos_${Date.now()}.bin`);
+    fs.writeFile(tmpFile, Buffer.from(bytes), (writeErr) => {
+      if (writeErr) return reject(new Error(`Error archivo temporal: ${writeErr.message}`));
 
-    const psScript = `
+      const safeName = printerName.replace(/'/g, "''");
+      const safeTmp  = tmpFile.replace(/\\/g, '\\\\');
+      const n        = parseInt(copies);
+
+      // System.Printing carga una DLL pre-compilada de Windows — sin compilación C#,
+      // arranca en <1 segundo. AddJob con JobStream envía bytes RAW directamente al spooler.
+      const psScript = `
 $ErrorActionPreference = 'Stop'
-$bytes = [System.Convert]::FromBase64String('${b64}')
-$sig = @'
-using System;
-using System.Runtime.InteropServices;
-public class Winspool {
-  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Ansi)]
-  public class DOCINFOA {
-    public string pDocName    = "RAW";
-    public string pOutputFile = null;
-    public string pDataType   = "RAW";
-  }
-  [DllImport("winspool.drv", EntryPoint="OpenPrinterA")]
-  public static extern bool OpenPrinter(string n, out IntPtr h, IntPtr d);
-  [DllImport("winspool.drv")]
-  public static extern bool ClosePrinter(IntPtr h);
-  [DllImport("winspool.drv", EntryPoint="StartDocPrinterA")]
-  public static extern int StartDocPrinter(IntPtr h, int l, DOCINFOA di);
-  [DllImport("winspool.drv")]
-  public static extern bool EndDocPrinter(IntPtr h);
-  [DllImport("winspool.drv")]
-  public static extern bool WritePrinter(IntPtr h, byte[] b, int n, out int w);
+Add-Type -AssemblyName System.Printing
+Add-Type -AssemblyName ReachFramework
+$bytes = [System.IO.File]::ReadAllBytes('${safeTmp}')
+$srv = New-Object System.Printing.LocalPrintServer
+$pq  = $srv.GetPrintQueue('${safeName}')
+for ($i = 0; $i -lt ${n}; $i++) {
+  $job    = $pq.AddJob('LogosPOS')
+  $stream = $job.JobStream
+  $stream.Write($bytes, 0, $bytes.Length)
+  $stream.Close()
 }
-'@
-Add-Type -TypeDefinition $sig -Language CSharp
-$copies = ${parseInt(copies)}
-$h = [IntPtr]::Zero
-if (-not [Winspool]::OpenPrinter('${printerName.replace(/'/g, "''")}', [ref]$h, [IntPtr]::Zero)) {
-  throw "No se pudo abrir la impresora '${printerName.replace(/'/g, "''")}'."
-}
-try {
-  for ($i = 0; $i -lt $copies; $i++) {
-    $di = New-Object Winspool+DOCINFOA
-    [Winspool]::StartDocPrinter($h, 1, $di) | Out-Null
-    $written = 0
-    [Winspool]::WritePrinter($h, $bytes, $bytes.Length, [ref]$written) | Out-Null
-    [Winspool]::EndDocPrinter($h) | Out-Null
-  }
-} finally {
-  [Winspool]::ClosePrinter($h) | Out-Null
-}
-Write-Output "OK"
+Write-Output 'OK'
 `.trim();
 
-    exec(
-      `powershell -NoProfile -NonInteractive -Command "${psScript.replace(/"/g, '\\"')}"`,
-      { windowsHide: true, timeout: 15000 },
-      (err, stdout, stderr) => {
-        if (err || !stdout.trim().endsWith('OK')) {
-          const msg = stderr?.trim() || err?.message || 'Error desconocido';
-          reject(new Error(`Error USB "${printerName}": ${msg}`));
-        } else {
-          resolve();
+      exec(
+        `powershell -NoProfile -NonInteractive -Command "${psScript.replace(/"/g, '\\"')}"`,
+        { windowsHide: true, timeout: 20000 },
+        (err, stdout, stderr) => {
+          try { fs.unlinkSync(tmpFile); } catch {}
+          if (err || !(stdout || '').trim().endsWith('OK')) {
+            const msg = (stderr || '').trim() || err?.message || 'Error desconocido';
+            reject(new Error(`Error USB "${printerName}": ${msg}`));
+          } else {
+            resolve();
+          }
         }
-      }
-    );
+      );
+    });
   });
 }
 

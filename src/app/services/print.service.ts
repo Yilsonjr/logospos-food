@@ -570,7 +570,7 @@ export class PrintService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000)
+      signal: AbortSignal.timeout(tipoConexion === 'usb' ? 25000 : 8000)
     });
 
     if (!response.ok) {
