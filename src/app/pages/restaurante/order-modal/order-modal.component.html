@@ -3,24 +3,24 @@
 
     <!-- HEADER -->
     <div class="order-modal-header">
-      <div>
+      <div class="header-info">
         <h5 class="mb-0">
           @switch (tipoOrden) {
             @case ('mesa') {
-              <i class="bi bi-table me-2"></i>Mesa {{ mesa?.numero_mesa ?? '' }}
+              <i class="fa-solid fa-table-cells me-2"></i>Mesa {{ mesa?.numero_mesa ?? '' }}
               @if (mesa?.zona?.nombre) { <small class="text-muted fw-normal">— {{ mesa?.zona?.nombre }}</small> }
             }
             @case ('barra') {
-              <i class="bi bi-lightning-fill me-2 text-warning"></i>Venta Rápida
+              <i class="fa-solid fa-bolt me-2 text-warning"></i>Venta Rápida
               @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
             }
             @case ('llevar') {
-              <i class="bi bi-bag me-2"></i>Para Llevar
+              <i class="fa-solid fa-bag-shopping me-2"></i>Para Llevar
               @if (clienteNombre) { <small class="text-light opacity-75 ms-1">— {{ clienteNombre }}</small> }
               @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
             }
             @case ('delivery') {
-              <i class="bi bi-bicycle me-2 text-info"></i>Delivery
+              <i class="fa-solid fa-motorcycle me-2 text-info"></i>Delivery
               @if (clienteNombre) { <small class="text-light opacity-75 ms-1">— {{ clienteNombre }}</small> }
               @if (numeroPedidoDia) { <small class="text-warning ms-1">#{{ numeroPedidoDia }}</small> }
             }
@@ -32,46 +32,55 @@
             {{ orden.cantidad_comensales }} comensal(es)
           </small>
         }
-        @if ((tipoOrden === 'llevar' || tipoOrden === 'delivery') && clienteTelefono) {
-          <small class="text-light opacity-75 d-block">
-            <i class="bi bi-telephone me-1"></i>{{ clienteTelefono }}
-          </small>
-        }
       </div>
-      <button class="btn btn-close btn-close-white" (click)="cerrar.emit()"></button>
+
+      <!-- Acciones header (desktop ocultas en mobile, mobile las muestra) -->
+      <div class="header-actions">
+        @if (orden && totalOrden > 0) {
+          <button class="btn-header-action" (click)="imprimirPrecuenta()" title="Pre-cuenta">
+            <i class="fa-solid fa-print"></i>
+            <span class="btn-header-label">Pre-cuenta</span>
+          </button>
+        }
+        @if (orden) {
+          <button class="btn-header-action danger" (click)="cancelarOrden()" [disabled]="cargando" title="Cancelar orden">
+            <i class="fa-solid fa-ban"></i>
+          </button>
+        }
+        <button class="btn btn-close btn-close-white ms-1" (click)="cerrar.emit()"></button>
+      </div>
     </div>
 
-    <!-- CUERPO: 3 columnas -->
+    <!-- CUERPO: 3 columnas (desktop) / 1 columna con tabs (mobile) -->
     <div class="order-modal-body">
 
-      <!-- COL 1: Categorías -->
-      <div class="col-categorias">
-        <h6 class="section-title">Categorías</h6>
+      <!-- COL 1: Categorías (desktop: sidebar vertical / mobile: chips horizontales) -->
+      <div class="col-categorias" [class.mobile-hidden]="vistaMovil === 'orden'">
         <div class="categorias-list">
           @for (cat of categorias; track trackByCat($index, cat)) {
             <button class="categoria-btn"
               [class.active]="categoriaActiva?.id === cat.id"
               (click)="seleccionarCategoria(cat)">
-              @if (cat.icono) { <span class="me-1">{{ cat.icono }}</span> }
-              {{ cat.nombre }}
+              @if (cat.icono) { <span class="cat-icono">{{ cat.icono }}</span> }
+              <span class="cat-nombre">{{ cat.nombre }}</span>
             </button>
           }
         </div>
       </div>
 
       <!-- COL 2: Items del menú -->
-      <div class="col-menu">
+      <div class="col-menu" [class.mobile-hidden]="vistaMovil === 'orden'">
         <!-- Buscador -->
         <div class="menu-search-wrap mb-2">
           <div class="menu-search-input-wrap">
-            <i class="bi bi-search menu-search-icon"></i>
+            <i class="fa-solid fa-magnifying-glass menu-search-icon"></i>
             <input type="search" class="menu-search-input"
               [(ngModel)]="busqueda"
               placeholder="Buscar producto…"
               autocomplete="off">
             @if (buscando) {
               <button class="menu-search-clear" (click)="limpiarBusqueda()" title="Limpiar">
-                <i class="bi bi-x-lg"></i>
+                <i class="fa-solid fa-xmark"></i>
               </button>
             }
           </div>
@@ -79,17 +88,17 @@
 
         <h6 class="section-title">
           @if (buscando) {
-            <i class="bi bi-search me-1 text-primary"></i>
             Resultados para "{{ busqueda }}"
             <span class="text-muted fw-normal ms-1">({{ itemsMostrados.length }})</span>
           } @else {
             {{ categoriaActiva?.nombre || 'Selecciona categoría' }}
           }
         </h6>
+
         <div class="menu-items-grid">
           @if (buscando && itemsMostrados.length === 0) {
             <div class="text-center text-muted py-4 col-span-all">
-              <i class="bi bi-search display-6 d-block mb-2 opacity-25"></i>
+              <i class="fa-solid fa-magnifying-glass display-6 d-block mb-2 opacity-25"></i>
               Sin resultados para "{{ busqueda }}"
             </div>
           }
@@ -99,7 +108,7 @@
                 <img [src]="item.imagen_url" [alt]="item.nombre" class="menu-item-img">
               } @else {
                 <div class="menu-item-placeholder">
-                  <i class="bi bi-egg-fried"></i>
+                  <i class="fa-solid fa-bowl-food"></i>
                 </div>
               }
               <div class="menu-item-info">
@@ -116,8 +125,6 @@
         <!-- Panel flotante: detalle de item seleccionado -->
         @if (itemSeleccionado) {
           <div class="item-detalle-panel">
-
-            <!-- Header del plato -->
             <div class="item-detalle-header">
               <div>
                 <strong class="item-detalle-nombre">{{ itemSeleccionado.nombre }}</strong>
@@ -128,13 +135,10 @@
               <button class="btn btn-sm btn-close" (click)="itemSeleccionado = null"></button>
             </div>
 
-            <!-- Grupos de modificadores / guarniciones -->
             @if (gruposModificadores.length) {
               <div class="modificadores-grupos">
                 @for (grupo of gruposModificadores; track grupo.grupo) {
                   <div class="mod-grupo">
-
-                    <!-- Cabecera del grupo -->
                     <div class="mod-grupo-header">
                       <span class="mod-grupo-nombre">{{ grupo.grupo }}</span>
                       <div class="d-flex align-items-center gap-1">
@@ -151,15 +155,13 @@
                         }
                       </div>
                     </div>
-
-                    <!-- Chips de selección -->
                     <div class="mod-chips">
                       @for (mod of grupo.items; track mod.id) {
                         <button class="mod-chip"
                           [class.selected]="tieneModificador(mod.nombre)"
                           (click)="toggleModificador(mod)">
                           @if (tieneModificador(mod.nombre)) {
-                            <i class="bi bi-check-circle-fill me-1"></i>
+                            <i class="fa-solid fa-circle-check me-1"></i>
                           }
                           {{ mod.nombre }}
                           @if (mod.precio_adicional > 0) {
@@ -168,25 +170,22 @@
                         </button>
                       }
                     </div>
-
                   </div>
                 }
               </div>
             }
 
-            <!-- Notas especiales -->
             <div class="item-notas-wrap">
               <label class="item-notas-label">
-                <i class="bi bi-pencil-square me-1"></i>Notas especiales
+                <i class="fa-solid fa-pen me-1"></i>Notas especiales
               </label>
               <textarea class="form-control form-control-sm item-notas-input" rows="2"
                 [(ngModel)]="notasItem" placeholder="Sin cebolla, bien cocido, sin sal…"></textarea>
             </div>
 
-            <!-- Comensal -->
             @if (cantidadComensales > 1) {
               <div class="item-comensal-wrap">
-                <label class="item-notas-label"><i class="bi bi-person me-1"></i>Asignar a:</label>
+                <label class="item-notas-label"><i class="fa-solid fa-person me-1"></i>Asignar a:</label>
                 <select class="form-select form-select-sm" [(ngModel)]="comensalItem">
                   <option [value]="null">General</option>
                   @for (n of comensalesRange; track n) {
@@ -196,7 +195,6 @@
               </div>
             }
 
-            <!-- Footer: cantidad + agregar -->
             <div class="item-detalle-footer">
               <div class="cantidad-control">
                 <button class="btn btn-sm btn-outline-secondary"
@@ -206,19 +204,17 @@
                   (click)="cantidadItem = cantidadItem + 1">+</button>
               </div>
               <button class="btn btn-agregar flex-grow-1" (click)="agregarAlCarrito()">
-                <i class="bi bi-cart-plus me-1"></i>
+                <i class="fa-solid fa-cart-plus me-1"></i>
                 Agregar · RD$ {{ precioConMods * cantidadItem | number:'1.2-2' }}
               </button>
             </div>
-
           </div>
         }
       </div>
 
       <!-- COL 3: Carrito + Orden -->
-      <div class="col-carrito">
+      <div class="col-carrito" [class.mobile-hidden]="vistaMovil === 'menu'">
 
-        <!-- Comensales (solo para mesa/barra) -->
         @if (!orden && tipoOrden !== 'llevar' && tipoOrden !== 'delivery') {
           <div class="mb-3">
             <label class="small text-muted">Comensales:</label>
@@ -232,10 +228,9 @@
           </div>
         }
 
-        <!-- Carrito pendiente de confirmar -->
         @if (carrito.length > 0) {
           <h6 class="section-title text-warning">
-            <i class="bi bi-cart-fill"></i> Carrito ({{ carrito.length }})
+            <i class="fa-solid fa-cart-shopping"></i> Carrito ({{ carrito.length }})
           </h6>
           <div class="carrito-items">
             @for (item of carrito; track trackByItem($index, item)) {
@@ -245,7 +240,7 @@
                   <div class="d-flex align-items-center gap-1">
                     <span class="text-success fw-bold">RD$ {{ item.precio_total | number:'1.2-2' }}</span>
                     <button class="btn btn-sm p-0 text-danger" (click)="quitarDelCarrito($index)">
-                      <i class="bi bi-x-circle"></i>
+                      <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
                 </div>
@@ -266,14 +261,13 @@
           </div>
           <button class="btn btn-success w-100 mb-3" (click)="confirmarItems()" [disabled]="cargando">
             @if (cargando) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            <i class="bi bi-check-circle"></i> Confirmar Items
+            <i class="fa-solid fa-circle-check"></i> Confirmar Items
           </button>
         }
 
-        <!-- Items persistidos en la orden -->
         @if (itemsPersistidos.length > 0) {
           <h6 class="section-title">
-            <i class="bi bi-receipt"></i> Orden
+            <i class="fa-solid fa-receipt"></i> Orden
           </h6>
           <div class="orden-items">
             @for (item of itemsPersistidos; track item.id) {
@@ -302,7 +296,7 @@
                   </small>
                   @if (item.estado === 'pendiente') {
                     <button class="btn btn-xs text-danger" (click)="cancelarItem(item.id)">
-                      <i class="bi bi-trash3"></i>
+                      <i class="fa-solid fa-trash"></i>
                     </button>
                   }
                 </div>
@@ -310,7 +304,6 @@
             }
           </div>
 
-          <!-- Totalizador -->
           <div class="totalizador mt-2">
             <div class="d-flex justify-content-between">
               <span class="text-muted">Subtotal:</span>
@@ -331,20 +324,37 @@
 
         @if (carrito.length === 0 && itemsPersistidos.length === 0 && !cargando) {
           <div class="text-center text-muted py-4">
-            <i class="bi bi-cart display-4 d-block mb-2"></i>
+            <i class="fa-solid fa-cart-shopping" style="font-size:2.5rem;opacity:.2;display:block;margin-bottom:.5rem"></i>
             Selecciona items del menú
           </div>
         }
+
+        <!-- Botones de acción dentro del panel orden (desktop) -->
+        <div class="carrito-acciones-desktop">
+          @if (hayItemsPendientes && orden) {
+            <button class="btn btn-warning w-100 mb-2" (click)="enviarACocina()" [disabled]="enviandoCocina">
+              @if (enviandoCocina) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="fa-solid fa-paper-plane me-1"></i> Enviar a Cocina
+            </button>
+          }
+          @if (orden && totalOrden > 0) {
+            <button class="btn btn-success w-100 fw-bold" (click)="cobrar.emit(orden!.id)">
+              <i class="fa-solid fa-coins me-1"></i>
+              Cobrar · RD$ {{ totalOrden | number:'1.2-2' }}
+            </button>
+          }
+        </div>
+
       </div>
     </div>
 
-    <!-- FOOTER -->
-    <div class="order-modal-footer">
+    <!-- FOOTER DESKTOP -->
+    <div class="order-modal-footer desktop-footer">
       <div class="d-flex gap-2">
         <button class="btn btn-outline-secondary" (click)="cerrar.emit()">Cerrar</button>
         @if (orden) {
           <button class="btn btn-outline-danger" (click)="cancelarOrden()" [disabled]="cargando">
-            <i class="bi bi-trash"></i> Cancelar Orden
+            <i class="fa-solid fa-ban me-1"></i> Cancelar Orden
           </button>
         }
       </div>
@@ -352,19 +362,60 @@
         @if (hayItemsPendientes && orden) {
           <button class="btn btn-warning" (click)="enviarACocina()" [disabled]="enviandoCocina">
             @if (enviandoCocina) { <span class="spinner-border spinner-border-sm me-1"></span> }
-            <i class="bi bi-send"></i> Enviar a Cocina
+            <i class="fa-solid fa-paper-plane me-1"></i> Enviar a Cocina
           </button>
         }
         @if (orden && totalOrden > 0) {
-          <button class="btn btn-outline-secondary" (click)="imprimirPrecuenta()" title="Imprimir pre-cuenta">
-            <i class="bi bi-printer me-1"></i>Pre-cuenta
+          <button class="btn btn-outline-secondary" (click)="imprimirPrecuenta()">
+            <i class="fa-solid fa-print me-1"></i>Pre-cuenta
           </button>
           <button class="btn btn-success fw-bold px-4" (click)="cobrar.emit(orden!.id)">
-            <i class="bi bi-cash-coin me-1"></i>
+            <i class="fa-solid fa-coins me-1"></i>
             Cobrar · RD$ {{ totalOrden | number:'1.2-2' }}
           </button>
         }
       </div>
+    </div>
+
+    <!-- BOTTOM BAR MÓVIL (siempre visible) -->
+    <div class="mobile-bottom-bar">
+      <!-- Tab izquierda: Menú -->
+      <button class="mobile-tab" [class.active]="vistaMovil === 'menu'" (click)="vistaMovil = 'menu'">
+        <i class="fa-solid fa-utensils"></i>
+        <span>Menú</span>
+      </button>
+
+      <!-- Centro: botón acción principal -->
+      <div class="mobile-action-center">
+        @if (hayItemsPendientes && orden) {
+          <button class="mobile-btn-cocina" (click)="enviarACocina()" [disabled]="enviandoCocina">
+            @if (enviandoCocina) {
+              <span class="spinner-border spinner-border-sm"></span>
+            } @else {
+              <i class="fa-solid fa-paper-plane"></i>
+            }
+            <span>Cocina</span>
+          </button>
+        } @else if (orden && totalOrden > 0) {
+          <button class="mobile-btn-cobrar" (click)="cobrar.emit(orden!.id)">
+            <i class="fa-solid fa-coins"></i>
+            <span>RD$ {{ totalOrden | number:'1.0-0' }}</span>
+          </button>
+        } @else {
+          <div class="mobile-action-placeholder">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+        }
+      </div>
+
+      <!-- Tab derecha: Orden con badge -->
+      <button class="mobile-tab" [class.active]="vistaMovil === 'orden'" (click)="vistaMovil = 'orden'">
+        @if ((carrito.length + itemsPersistidos.length) > 0) {
+          <span class="mobile-tab-badge">{{ carrito.length + itemsPersistidos.length }}</span>
+        }
+        <i class="fa-solid fa-receipt"></i>
+        <span>Orden</span>
+      </button>
     </div>
 
     <!-- OVERLAY DE CARGA GLOBAL -->

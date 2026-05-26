@@ -50,6 +50,9 @@ export class OrderModalComponent implements OnInit, OnDestroy {
   cargando = false;
   enviandoCocina = false;
 
+  // Vista móvil: 'menu' | 'orden'
+  vistaMovil: 'menu' | 'orden' = 'menu';
+
   constructor(
     private ordersService: RestaurantOrdersService,
     private printService: PrintService,
