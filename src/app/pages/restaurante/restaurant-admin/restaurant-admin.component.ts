@@ -113,7 +113,15 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     proveedor: string;
     numero_comprobante: string;
     notas: string;
-    items: Array<{ inventory_item_id: string; cantidad: number; precio_unitario: number; _nombre?: string; _unidad?: string }>;
+    items: Array<{
+      inventory_item_id: string;
+      cantidad: number;
+      precio_unitario: number;
+      _nombre?: string;
+      _unidad?: string;
+      _busqueda?: string;
+      _sugerencias?: RestaurantInventoryItem[];
+    }>;
   } = { proveedor: '', numero_comprobante: '', notas: '', items: [] };
 
   // Wizard "Crear Producto Vendible" (insumo + menu item + receta 1:1)
@@ -655,7 +663,8 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     this.editandoInv = item || null;
     this.invForm = item
       ? { ...item }
-      : { nombre: '', unidad_medida: 'unidad', cantidad_actual: 0, cantidad_minima: 0, costo_unitario: 0, activo: true };
+      : { nombre: '', unidad_medida: 'unidad', cantidad_actual: 0, cantidad_minima: 0,
+          costo_unitario: 0, activo: true, imagen_url: null };
     this.mostrarFormInv = true;
   }
 
@@ -675,6 +684,29 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  subiendoImagenInsumo = false;
+
+  async subirImagenInsumo(event: Event): Promise<void> {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.subiendoImagenInsumo = true;
+    try {
+      const ext    = file.name.split('.').pop();
+      const nombre = `insumos/${Date.now()}.${ext}`;
+      const { error } = await this.supabaseService.client.storage
+        .from('productos-imagenes')
+        .upload(nombre, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      this.invForm.imagen_url =
+        `${environment.SUPABASE_URL}/storage/v1/object/public/productos-imagenes/${nombre}`;
+      this.cdr.detectChanges();
+    } catch (e: any) {
+      Swal.fire('Error al subir imagen', e.message ?? 'Verifica el bucket "productos-imagenes" en Supabase Storage.', 'error');
+    } finally {
+      this.subiendoImagenInsumo = false;
     }
   }
 
@@ -1038,7 +1070,13 @@ ${piePagina}
   }
 
   agregarLineaCompra(): void {
-    this.compraForm.items.push({ inventory_item_id: '', cantidad: 1, precio_unitario: 0 });
+    this.compraForm.items.push({
+      inventory_item_id: '',
+      cantidad: 1,
+      precio_unitario: 0,
+      _busqueda: '',
+      _sugerencias: []
+    });
   }
 
   quitarLineaCompra(i: number): void {
@@ -1053,6 +1091,37 @@ ${piePagina}
       this.compraForm.items[i]._unidad = inv.unidad_medida;
       this.compraForm.items[i].precio_unitario = inv.costo_unitario || 0;
     }
+  }
+
+  // ── Búsqueda de insumos con autocompletado ─────────────────
+  filtrarInsumos(i: number, texto: string): void {
+    this.compraForm.items[i]._busqueda = texto;
+    if (!texto.trim()) {
+      this.compraForm.items[i]._sugerencias = [];
+      return;
+    }
+    const q = texto.toLowerCase();
+    this.compraForm.items[i]._sugerencias = this.inventarioItems
+      .filter(inv => inv.nombre.toLowerCase().includes(q))
+      .slice(0, 10);
+  }
+
+  seleccionarInsumoSugerido(i: number, inv: RestaurantInventoryItem): void {
+    this.compraForm.items[i].inventory_item_id = inv.id;
+    this.compraForm.items[i]._nombre          = inv.nombre;
+    this.compraForm.items[i]._unidad          = inv.unidad_medida;
+    this.compraForm.items[i]._busqueda        = inv.nombre;
+    this.compraForm.items[i]._sugerencias     = [];
+    this.compraForm.items[i].precio_unitario  = inv.costo_unitario || 0;
+  }
+
+  limpiarSeleccionInsumo(i: number): void {
+    this.compraForm.items[i].inventory_item_id = '';
+    this.compraForm.items[i]._nombre           = '';
+    this.compraForm.items[i]._unidad           = '';
+    this.compraForm.items[i]._busqueda         = '';
+    this.compraForm.items[i]._sugerencias      = [];
+    this.compraForm.items[i].precio_unitario   = 0;
   }
 
   get totalCompra(): number {

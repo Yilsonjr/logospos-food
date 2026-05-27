@@ -1009,7 +1009,7 @@
 
             <!-- Bloque: Info adicional -->
             <div class="ra-modal-divider mb-3">Info adicional <span class="fw-normal text-muted" style="text-transform:none;letter-spacing:0">(opcional)</span></div>
-            <div class="row g-3">
+            <div class="row g-3 mb-3">
               <div class="col-6">
                 <div class="ra-field-group">
                   <label class="ra-label"><i class="fa-solid fa-truck me-1"></i>Proveedor</label>
@@ -1021,6 +1021,41 @@
                   <label class="ra-label"><i class="fa-solid fa-location-dot me-1"></i>Ubicación</label>
                   <input class="form-control" [(ngModel)]="invForm.ubicacion" placeholder="Bodega, Nevera, Almacén…">
                 </div>
+              </div>
+            </div>
+
+            <!-- Bloque: Imagen -->
+            <div class="ra-modal-divider mb-3">Imagen <span class="fw-normal text-muted" style="text-transform:none;letter-spacing:0">(opcional)</span></div>
+            <div class="inv-imagen-upload-row">
+
+              <!-- Preview -->
+              <div class="inv-imagen-preview">
+                @if (invForm.imagen_url) {
+                  <img [src]="invForm.imagen_url" alt="Imagen insumo" class="inv-img-thumb">
+                  <button type="button" class="inv-img-remove" (click)="invForm.imagen_url = null" title="Quitar imagen">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                } @else {
+                  <div class="inv-img-placeholder">
+                    <i class="fa-solid fa-image"></i>
+                  </div>
+                }
+              </div>
+
+              <!-- Botón de carga -->
+              <div class="inv-imagen-actions">
+                <label class="btn btn-outline-primary btn-sm" [class.disabled]="subiendoImagenInsumo">
+                  @if (subiendoImagenInsumo) {
+                    <span class="spinner-border spinner-border-sm me-1"></span> Subiendo…
+                  } @else {
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Subir imagen
+                  }
+                  <input type="file" accept="image/*" hidden (change)="subirImagenInsumo($event)" [disabled]="subiendoImagenInsumo">
+                </label>
+                <p class="text-muted mb-0" style="font-size:.72rem">JPG, PNG o WEBP · Máx. 2 MB</p>
+                @if (invForm.imagen_url) {
+                  <p class="text-success mb-0" style="font-size:.72rem"><i class="fa-solid fa-circle-check me-1"></i>Imagen cargada</p>
+                }
               </div>
             </div>
 
@@ -1274,12 +1309,53 @@
                 <div class="compra-linea-row">
                   <div class="compra-linea-insumo">
                     <label class="ra-label">Insumo</label>
-                    <select class="form-select form-select-sm" [(ngModel)]="item.inventory_item_id" (ngModelChange)="onInsumoCompraChange(i)">
-                      <option value="">-- Seleccionar --</option>
-                      @for (inv of inventarioItems; track inv.id) {
-                        <option [value]="inv.id">{{ inv.nombre }} ({{ inv.unidad_medida }})</option>
+
+                    <!-- Buscador con autocompletado -->
+                    <div class="compra-busqueda-wrap">
+
+                      <!-- Si ya hay un insumo seleccionado, mostrar chip -->
+                      @if (item.inventory_item_id) {
+                        <div class="compra-insumo-chip">
+                          <span class="compra-chip-nombre">{{ item._nombre }}</span>
+                          <span class="compra-chip-unidad">{{ item._unidad }}</span>
+                          <button type="button" class="compra-chip-clear" (click)="limpiarSeleccionInsumo(i)" title="Cambiar insumo">
+                            <i class="fa-solid fa-xmark"></i>
+                          </button>
+                        </div>
+                      } @else {
+                        <!-- Campo de búsqueda -->
+                        <div class="compra-search-input-wrap">
+                          <i class="fa-solid fa-magnifying-glass compra-search-icon"></i>
+                          <input
+                            type="text"
+                            class="form-control form-control-sm compra-search-input"
+                            placeholder="Buscar insumo…"
+                            [value]="item._busqueda || ''"
+                            (input)="filtrarInsumos(i, $any($event.target).value)"
+                            autocomplete="off">
+                        </div>
+
+                        <!-- Sugerencias -->
+                        @if (item._sugerencias && item._sugerencias.length > 0) {
+                          <div class="compra-sugerencias">
+                            @for (sug of item._sugerencias; track sug.id) {
+                              <div class="compra-sug-item" (click)="seleccionarInsumoSugerido(i, sug)">
+                                <span class="compra-sug-nombre">{{ sug.nombre }}</span>
+                                <span class="compra-sug-meta">{{ sug.unidad_medida }}
+                                  @if (sug.costo_unitario) { · RD${{ sug.costo_unitario | number:'1.0-2' }} }
+                                </span>
+                              </div>
+                            }
+                          </div>
+                        }
+
+                        @if (item._busqueda && item._busqueda.length > 0 && (!item._sugerencias || item._sugerencias.length === 0)) {
+                          <div class="compra-no-result">
+                            <i class="fa-solid fa-circle-xmark me-1 text-danger"></i>Sin resultados para "{{ item._busqueda }}"
+                          </div>
+                        }
                       }
-                    </select>
+                    </div>
                   </div>
                   <div style="width:90px">
                     <label class="ra-label">Cantidad</label>

@@ -227,6 +227,7 @@ export interface RestaurantInventoryItem {
   costo_unitario: number;
   proveedor?: string | null;
   ubicacion?: string | null;
+  imagen_url?: string | null;
   activo: boolean;
   created_at?: string;
   updated_at?: string;

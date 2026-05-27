@@ -451,7 +451,132 @@
   padding: 8px 10px;
 }
 
-.compra-linea-insumo { flex: 1; }
+.compra-linea-insumo { flex: 1; min-width: 0; }
+
+/* ── Buscador de insumos ──────────────────────────── */
+.compra-busqueda-wrap {
+  position: relative;
+}
+
+.compra-search-input-wrap {
+  position: relative;
+}
+.compra-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+.compra-search-input {
+  padding-left: 28px !important;
+  border-radius: 8px !important;
+}
+.compra-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+}
+
+/* Dropdown sugerencias */
+.compra-sugerencias {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 500;
+  background: #fff;
+  border: 1.5px solid #e0e7ff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  max-height: 220px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.compra-sug-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background .12s;
+  border-bottom: 1px solid #f3f4f6;
+}
+.compra-sug-item:last-child { border-bottom: none; }
+.compra-sug-item:hover { background: #f0f0ff; }
+.compra-sug-nombre {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+}
+.compra-sug-meta {
+  font-size: 0.72rem;
+  color: #6366f1;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Sin resultados */
+.compra-no-result {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 500;
+  background: #fff;
+  border: 1.5px solid #fee2e2;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #64748b;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+
+/* Chip cuando ya está seleccionado */
+.compra-insumo-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 5px 8px 5px 10px;
+  min-height: 31px;
+}
+.compra-chip-nombre {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #15803d;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compra-chip-unidad {
+  font-size: 0.7rem;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.compra-chip-clear {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.78rem;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color .12s;
+}
+.compra-chip-clear:hover { color: #ef4444; }
 
 .compra-total-row {
   display: flex;
@@ -465,6 +590,59 @@
 .btn-xs {
   padding: 2px 8px;
   font-size: 0.75rem;
+}
+
+/* ── Imagen insumo ────────────────────────────────── */
+.inv-imagen-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0 8px;
+}
+.inv-imagen-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px dashed #e2e8f0;
+  flex-shrink: 0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.inv-img-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.inv-img-placeholder {
+  color: #cbd5e1;
+  font-size: 1.8rem;
+}
+.inv-img-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background: rgba(0,0,0,.55);
+  border: none;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: .65rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.inv-img-remove:hover { background: #ef4444; }
+.inv-imagen-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ── Guarniciones / Modificadores admin panel ──────── */
