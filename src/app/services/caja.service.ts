@@ -55,27 +55,44 @@ export class CajaService {
           return null;
         }
 
-        const { data, error } = await this.supabaseService.client
+        const negocioId = this.authService.getNegocioId();
+
+        // 1. Buscar caja propia del usuario
+        const { data: cajaPropia, error: errorPropia } = await this.supabaseService.client
           .from('cajas')
           .select('*')
           .eq('estado', 'abierta')
-          .eq('usuario_apertura', usuarioActual.username) // Filtrar por usuario actual
+          .eq('negocio_id', negocioId)
+          .eq('usuario_apertura', usuarioActual.username)
           .order('fecha_apertura', { ascending: false })
           .limit(1)
           .maybeSingle();
 
+        if (errorPropia) {
+          console.error('❌ Error al verificar caja propia:', errorPropia);
+        }
+
+        // 2. Si no tiene caja propia, usar cualquier caja abierta del negocio
+        //    (meseros trabajan bajo la caja del cajero/admin)
+        let cajaAbierta = cajaPropia || null;
+        if (!cajaAbierta) {
+          const { data: cajaNegocio, error: errorNegocio } = await this.supabaseService.client
+            .from('cajas')
+            .select('*')
+            .eq('estado', 'abierta')
+            .eq('negocio_id', negocioId)
+            .order('fecha_apertura', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!errorNegocio) cajaAbierta = cajaNegocio || null;
+        }
+
         this.verificandoCaja = false;
         this.promesaVerificacion = null;
 
-        if (error) {
-          console.error('❌ Error al verificar caja abierta:', error);
-          return null;
-        }
-
-        const cajaAbierta = data || null;
         this.cajaActualSubject.next(cajaAbierta);
-
-        console.log('✅ Verificación completada:', cajaAbierta ? `Caja #${cajaAbierta.id} abierta` : 'Sin caja abierta');
+        console.log('✅ Verificación completada:', cajaAbierta ? `Caja #${cajaAbierta.id} (${cajaAbierta.usuario_apertura})` : 'Sin caja abierta');
         return cajaAbierta;
       })();
 

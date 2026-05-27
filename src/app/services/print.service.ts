@@ -126,14 +126,16 @@ export class PrintService {
     for (const row of data) {
       if (!map.has(row.printer_id)) {
         map.set(row.printer_id, {
-          printer_id:    row.printer_id,
-          printer_nombre: row.printer_nombre,
-          printer_ip:    row.printer_ip,
-          printer_puerto: row.printer_puerto,
-          printer_tipo:  row.printer_tipo,
-          printer_chars: row.printer_chars,
-          printer_corte: row.printer_corte,
-          copies:        row.printer_copies || 1,
+          printer_id:           row.printer_id,
+          printer_nombre:       row.printer_nombre,
+          printer_ip:           row.printer_ip,
+          printer_puerto:       row.printer_puerto,
+          printer_tipo:         row.printer_tipo,
+          printer_tipo_conexion: row.printer_tipo_conexion,
+          printer_puerto_usb:   row.printer_puerto_usb,
+          printer_chars:        row.printer_chars,
+          printer_corte:        row.printer_corte,
+          copies:               row.printer_copies || 1,
           items: []
         });
       }
