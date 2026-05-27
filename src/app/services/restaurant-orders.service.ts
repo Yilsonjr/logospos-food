@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { SupabaseService } from './supabase.service';
+import { OfflineService } from './offline.service';
 import {
   RestaurantOrder, RestaurantOrderItem, OrderWithItems,
   CrearOrden, AgregarItemOrden, KitchenTicketItem,
@@ -15,7 +16,13 @@ export class RestaurantOrdersService {
 
   private realtimeChannel: any = null;
 
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private offlineService: OfflineService
+  ) {
+    // Al reconectarse, sincronizar órdenes offline pendientes
+    this.offlineService.syncRequest$.subscribe(() => this.sincronizarOrdenesOffline());
+  }
 
   private get negocioId(): string {
     return localStorage.getItem('logos_negocio_id') || '';
@@ -52,21 +59,41 @@ export class RestaurantOrdersService {
   }
 
   async cargarTodoElMenu(): Promise<MenuCategory[]> {
-    const { data, error } = await this.supabaseService.client
-      .from('menu_categories')
-      .select(`
-        *,
-        items:menu_items(
-          *,
-          modificadores:menu_item_modifiers(*)
-        )
-      `)
-      .eq('negocio_id', this.negocioId)
-      .eq('activa', true)
-      .order('orden', { ascending: true });
+    // Si offline, devolver caché local
+    if (!this.offlineService.isOnline) {
+      console.log('📵 Menú desde caché local (offline)');
+      const local = await this.offlineService.obtenerMenuLocal(this.negocioId);
+      return local as any[];
+    }
 
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await this.supabaseService.client
+        .from('menu_categories')
+        .select(`
+          *,
+          items:menu_items(
+            *,
+            modificadores:menu_item_modifiers(*)
+          )
+        `)
+        .eq('negocio_id', this.negocioId)
+        .eq('activa', true)
+        .order('orden', { ascending: true });
+
+      if (error) throw error;
+      const categorias = data || [];
+
+      // Cachear en background para uso offline futuro
+      this.offlineService.cachearMenu(this.negocioId, categorias as any).catch(() => {});
+
+      return categorias;
+    } catch (e) {
+      // Fallback a caché si falla la red
+      console.warn('⚠️ Error cargando menú, usando caché:', e);
+      const local = await this.offlineService.obtenerMenuLocal(this.negocioId);
+      if (local.length) return local as any[];
+      throw e;
+    }
   }
 
   // ============================================================
@@ -117,6 +144,26 @@ export class RestaurantOrdersService {
   }
 
   async crearOrden(datos: CrearOrden): Promise<RestaurantOrder> {
+    if (!this.offlineService.isOnline) {
+      // Guardar offline — devolver un objeto simulado con ID temporal
+      const tempOrden = await this.offlineService.guardarOrdenOffline(
+        this.negocioId, datos, []
+      );
+      console.log('📵 Orden guardada offline:', tempOrden.tempId);
+      // Retornar objeto con estructura mínima para que la UI funcione
+      return {
+        id: tempOrden.tempId,
+        negocio_id: this.negocioId,
+        estado: 'abierta',
+        tipo_orden: datos.tipo_orden,
+        table_id: datos.table_id ?? null,
+        subtotal: 0, impuesto: 0, total: 0, propina: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        _offline: true
+      } as any;
+    }
+
     const { data, error } = await this.supabaseService.client
       .from('restaurant_orders')
       .insert(datos)
@@ -134,6 +181,29 @@ export class RestaurantOrdersService {
     );
     const subtotal = (item.precio_unitario + costoMods) * item.cantidad;
 
+    // Si la orden es offline (tempId), agregar item al registro local
+    if (item.order_id?.startsWith('off_')) {
+      await this.offlineService.agregarItemAOrdenOffline(item.order_id, { ...item, subtotal });
+      return {
+        id: `off_item_${Date.now()}`,
+        order_id: item.order_id,
+        menu_item_id: item.menu_item_id,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario,
+        subtotal,
+        estado: 'pendiente',
+        modificadores: item.modificadores,
+        notas_especiales: item.notas_especiales ?? null,
+        comensal_asignado: item.comensal_asignado ?? null,
+        created_at: new Date().toISOString(),
+        _offline: true
+      } as any;
+    }
+
+    if (!this.offlineService.isOnline) {
+      throw new Error('Sin conexión. Guarda la orden primero para agregar items offline.');
+    }
+
     const { data, error } = await this.supabaseService.client
       .from('restaurant_order_items')
       .insert({ ...item, subtotal, modificadores: item.modificadores })
@@ -142,6 +212,54 @@ export class RestaurantOrdersService {
 
     if (error) throw error;
     return data;
+  }
+
+  // ============================================================
+  // SINCRONIZACIÓN OFFLINE → SUPABASE
+  // ============================================================
+
+  async sincronizarOrdenesOffline(): Promise<void> {
+    const pendientes = await this.offlineService.obtenerOrdenesOfflinePendientes(this.negocioId);
+    if (!pendientes.length) return;
+
+    console.log(`🔄 Sincronizando ${pendientes.length} órdenes offline…`);
+    this.offlineService.setSyncing(true);
+
+    for (const orden of pendientes) {
+      try {
+        // 1. Crear la orden en Supabase
+        const { data: ordenReal, error: errOrden } = await this.supabaseService.client
+          .from('restaurant_orders')
+          .insert(orden.datos)
+          .select()
+          .single();
+
+        if (errOrden) throw errOrden;
+
+        // 2. Insertar los items con el ID real de la orden
+        if (orden.items.length) {
+          const itemsConId = orden.items.map((item: any) => ({
+            ...item,
+            order_id: ordenReal.id
+          }));
+          const { error: errItems } = await this.supabaseService.client
+            .from('restaurant_order_items')
+            .insert(itemsConId);
+
+          if (errItems) throw errItems;
+        }
+
+        await this.offlineService.marcarOrdenSincronizada(orden.idLocal!);
+        console.log(`✅ Orden offline ${orden.tempId} sincronizada → ${ordenReal.id}`);
+
+      } catch (e: any) {
+        console.error(`❌ Error sincronizando orden ${orden.tempId}:`, e.message);
+        await this.offlineService.marcarErrorSync(orden.idLocal!, e.message);
+      }
+    }
+
+    this.offlineService.setSyncing(false);
+    console.log('✅ Sincronización offline completada');
   }
 
   async actualizarCantidadItem(itemId: string, cantidad: number): Promise<void> {

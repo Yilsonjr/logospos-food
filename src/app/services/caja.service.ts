@@ -92,6 +92,14 @@ export class CajaService {
         this.promesaVerificacion = null;
 
         this.cajaActualSubject.next(cajaAbierta);
+
+        // Cachear en localStorage para uso offline en recarga
+        if (cajaAbierta) {
+          localStorage.setItem('logos_caja_cache', JSON.stringify(cajaAbierta));
+        } else {
+          localStorage.removeItem('logos_caja_cache');
+        }
+
         console.log('✅ Verificación completada:', cajaAbierta ? `Caja #${cajaAbierta.id} (${cajaAbierta.usuario_apertura})` : 'Sin caja abierta');
         return cajaAbierta;
       })();

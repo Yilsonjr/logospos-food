@@ -83,3 +83,4 @@ database/restaurant/repair_tipo_orden.sql
 database/restaurant/12_credito_restaurante.sql
 database/restaurant/12_cuentas_credito.sql
 database/restaurant/13_reservas_mesa.sql
+database/fix_secuencias_ncf.sql

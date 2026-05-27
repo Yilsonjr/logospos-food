@@ -6,7 +6,8 @@ import {
   RestaurantReportsService,
   PeriodoReporte, FiltroFecha,
   ResumenVentas, VentaPorDia, TopPlato,
-  PagoPorMetodo, MargenPlato, ResumenInventario
+  PagoPorMetodo, MargenPlato, ResumenInventario,
+  GananciasResumen
 } from '../../../services/restaurant-reports.service';
 
 interface RendimientoCocina {
@@ -27,7 +28,7 @@ export class ReportesRestauranteComponent implements OnInit {
   periodo: PeriodoReporte = 'hoy';
   fechaDesde = '';
   fechaHasta = '';
-  tabActiva: 'ventas' | 'platos' | 'pagos' | 'margenes' | 'inventario' | 'cocina' = 'ventas';
+  tabActiva: 'ventas' | 'platos' | 'pagos' | 'ganancias' | 'margenes' | 'inventario' | 'cocina' = 'ventas';
   cargando = false;
 
   // Datos
@@ -38,6 +39,7 @@ export class ReportesRestauranteComponent implements OnInit {
   margenes: MargenPlato[] = [];
   inventario: ResumenInventario | null = null;
   cocina: RendimientoCocina | null = null;
+  ganancias: GananciasResumen | null = null;
 
   readonly periodos: { value: PeriodoReporte; label: string }[] = [
     { value: 'hoy',         label: 'Hoy' },
@@ -102,20 +104,22 @@ export class ReportesRestauranteComponent implements OnInit {
     this.cdr.detectChanges();
     try {
       const f = this.filtro;
-      const [resumen, dias, top, pagos, cocina] = await Promise.all([
+      const [resumen, dias, top, pagos, cocina, ganancias] = await Promise.all([
         this.reportsService.cargarResumenVentas(f),
         this.reportsService.cargarVentasPorDia(f),
         this.reportsService.cargarTopPlatos(f),
         this.reportsService.cargarPagosPorMetodo(f),
-        this.reportsService.cargarRendimientoCocina(f)
+        this.reportsService.cargarRendimientoCocina(f),
+        this.reportsService.cargarGanancias(f)
       ]);
-      this.resumen       = resumen;
-      this.ventasPorDia  = dias;
-      this.topPlatos     = top;
+      this.resumen        = resumen;
+      this.ventasPorDia   = dias;
+      this.topPlatos      = top;
       this.pagosPorMetodo = pagos;
-      this.cocina        = cocina;
+      this.cocina         = cocina;
+      this.ganancias      = ganancias;
 
-      // Márgenes e inventario solo si se abre esa pestaña (o aquí también)
+      // Márgenes e inventario
       await this.cargarMargenes();
       await this.cargarInventario();
     } catch (e: any) {
@@ -182,4 +186,17 @@ export class ReportesRestauranteComponent implements OnInit {
   trackByPlato(_: number, p: TopPlato): string { return p.menu_item_id; }
   trackByPago(_: number, p: PagoPorMetodo): string { return p.forma_pago; }
   trackByMargen(_: number, m: MargenPlato): string { return m.menu_item_id; }
+  trackByGanancia(_: number, g: any): string { return g.menu_item_id; }
+
+  colorGanancia(pct: number): string {
+    if (pct >= 60) return 'text-success';
+    if (pct >= 35) return 'text-warning';
+    return 'text-danger';
+  }
+
+  badgeGanancia(pct: number): string {
+    if (pct >= 60) return 'badge-margen-alto';
+    if (pct >= 35) return 'badge-margen-medio';
+    return 'badge-margen-bajo';
+  }
 }

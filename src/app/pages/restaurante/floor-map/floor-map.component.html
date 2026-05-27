@@ -1,5 +1,13 @@
 <div class="floor-map-wrapper">
 
+  <!-- BANNER OFFLINE -->
+  @if (modoOffline) {
+    <div class="fm-offline-banner mb-3">
+      <i class="fa-solid fa-wifi-slash"></i>
+      <span>Modo sin conexión — mostrando datos en caché. Las órdenes se sincronizarán al reconectarse.</span>
+    </div>
+  }
+
   <!-- STATS ROW -->
   <div class="fm-stats mb-4">
     <div class="fm-stat fm-stat-total">

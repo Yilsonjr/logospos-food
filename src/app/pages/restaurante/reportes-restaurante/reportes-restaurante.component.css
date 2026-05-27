@@ -536,6 +536,120 @@
 .rr-cocina-val   { font-size: 1.8rem; font-weight: 900; color: #1e293b; }
 .rr-cocina-label { font-size: 0.75rem; color: #64748b; }
 
+/* ── Ganancia KPI card ────────────────────────────── */
+.kpi-ganancia .rr-kpi-icon { background: rgba(16,185,129,.12); color: #059669; }
+.rr-kpi-sub {
+  font-size: 0.68rem;
+  color: #059669;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ── Tab highlight (Ganancias) ────────────────────── */
+.rr-tab-highlight { color: #059669 !important; }
+.rr-tab-highlight.active {
+  color: #059669 !important;
+  box-shadow: 0 -2px 0 #059669 inset !important;
+}
+
+/* ── Ganancia KPIs row ────────────────────────────── */
+.rr-ganancia-kpis {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 1.5rem 1.5rem 0;
+  flex-wrap: wrap;
+}
+.rr-gkpi {
+  flex: 1;
+  min-width: 160px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.rr-gkpi-ingresos .rr-gkpi-icon { background: rgba(99,102,241,.1); color: #4f46e5; }
+.rr-gkpi-costo    .rr-gkpi-icon { background: rgba(239,68,68,.1);  color: #dc2626; }
+.rr-gkpi-ganancia .rr-gkpi-icon { background: rgba(16,185,129,.12); color: #059669; }
+.rr-gkpi-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.rr-gkpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rr-gkpi-lbl {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.rr-gkpi-val {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #111827;
+  white-space: nowrap;
+}
+.rr-gkpi-badge {
+  align-self: flex-start;
+  font-size: 0.65rem !important;
+  padding: 2px 7px !important;
+}
+.rr-gkpi-operator {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #94a3b8;
+  padding: 0 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ── Barra ingresos/costo/ganancia ────────────────── */
+.rr-ganancia-barra-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 14px !important;
+}
+.rr-ganancia-barra-wrap {
+  display: flex;
+  height: 36px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+.rr-ganancia-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  transition: width .4s ease;
+}
+.rr-seg-costo    { background: #fca5a5; }
+.rr-seg-ganancia { background: #6ee7b7; }
+.rr-seg-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  padding: 0 6px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+
+/* ── Table totals footer ──────────────────────────── */
+.rr-table-total td {
+  background: #f0fdf4;
+  border-top: 2px solid #bbf7d0;
+}
+
 /* ── Responsive ───────────────────────────────────── */
 @media (max-width: 900px) {
   .rr-grid-2 { grid-template-columns: 1fr; }

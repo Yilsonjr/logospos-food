@@ -58,6 +58,29 @@ export interface ResumenInventario {
   top_consumidos: { nombre: string; consumido: number; unidad: string }[];
 }
 
+export interface GananciaDetalle {
+  menu_item_id: string;
+  nombre: string;
+  cantidadVendida: number;
+  ingresoTotal: number;
+  costoUnitario: number;
+  costoTotal: number;
+  ganancia: number;
+  margenPct: number;
+  fuente_costo: 'receta' | 'estimado' | 'sin_datos';
+}
+
+export interface GananciasResumen {
+  totalVentas: number;
+  costoEstimado: number;
+  gananciaEstimada: number;
+  margenGlobal: number;     // %
+  platosConCosto: number;
+  platosSinCosto: number;
+  ingresosNoCosteados: number; // ventas de platos sin costo asignado
+  detalleGanancias: GananciaDetalle[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class RestaurantReportsService {
 
@@ -343,6 +366,152 @@ export class RestaurantReportsService {
       items_bajo_stock:   inventario.filter(i => i.cantidad_actual <= i.cantidad_minima && i.cantidad_actual > 0).length,
       items_sin_stock:    inventario.filter(i => i.cantidad_actual <= 0).length,
       top_consumidos:     topConsumidos
+    };
+  }
+
+  // ============================================================
+  // GANANCIAS REALES DEL PERÍODO (ingresos - COGS estimado)
+  // ============================================================
+
+  async cargarGanancias(filtro: FiltroFecha): Promise<GananciasResumen> {
+    // 1. Órdenes cerradas en el período
+    const { data: ordenes } = await this.supabase.client
+      .from('restaurant_orders')
+      .select('id, total')
+      .eq('negocio_id', this.negocioId)
+      .eq('estado', 'cerrada')
+      .gte('hora_cierre', filtro.desde)
+      .lte('hora_cierre', filtro.hasta);
+
+    if (!ordenes?.length) {
+      return {
+        totalVentas: 0, costoEstimado: 0, gananciaEstimada: 0,
+        margenGlobal: 0, platosConCosto: 0, platosSinCosto: 0,
+        ingresosNoCosteados: 0, detalleGanancias: []
+      };
+    }
+
+    const orderIds = ordenes.map(o => o.id);
+    const totalVentas = ordenes.reduce((s, o) => s + (o.total || 0), 0);
+
+    // 2. Items vendidos en esas órdenes
+    const { data: items } = await this.supabase.client
+      .from('restaurant_order_items')
+      .select('menu_item_id, cantidad, subtotal, menu_item:menu_items(nombre, precio, costo_estimado)')
+      .in('order_id', orderIds)
+      .neq('estado', 'cancelado');
+
+    if (!items?.length) {
+      return {
+        totalVentas, costoEstimado: 0, gananciaEstimada: totalVentas,
+        margenGlobal: 100, platosConCosto: 0, platosSinCosto: 0,
+        ingresosNoCosteados: totalVentas, detalleGanancias: []
+      };
+    }
+
+    // Agrupar por menu_item_id
+    const agrupado: Record<string, {
+      nombre: string; cantidadVendida: number; ingresoTotal: number;
+      precioUnitario: number; costoEstimado: number | null;
+    }> = {};
+
+    for (const it of items) {
+      const id = it.menu_item_id;
+      const mi = it.menu_item as any;
+      if (!agrupado[id]) {
+        agrupado[id] = {
+          nombre: mi?.nombre || 'Desconocido',
+          cantidadVendida: 0,
+          ingresoTotal: 0,
+          precioUnitario: mi?.precio || 0,
+          costoEstimado: mi?.costo_estimado ?? null
+        };
+      }
+      agrupado[id].cantidadVendida += it.cantidad || 0;
+      agrupado[id].ingresoTotal    += it.subtotal || 0;
+    }
+
+    const menuIds = Object.keys(agrupado);
+
+    // 3. Costos de receta (suma de insumos × costo unitario por plato)
+    const { data: recetas } = await this.supabase.client
+      .from('menu_item_recipes')
+      .select('menu_item_id, cantidad_requerida, inventario:inventory_item_id(costo_unitario)')
+      .in('menu_item_id', menuIds);
+
+    const costosPorReceta: Record<string, number> = {};
+    for (const r of recetas || []) {
+      const costo = ((r.inventario as any)?.costo_unitario || 0) * (r.cantidad_requerida || 0);
+      costosPorReceta[r.menu_item_id] = (costosPorReceta[r.menu_item_id] || 0) + costo;
+    }
+
+    // 4. Construir detalle
+    const detalleGanancias: GananciaDetalle[] = [];
+    let costoEstimadoTotal = 0;
+    let ingresosNoCosteados = 0;
+    const setConCosto = new Set<string>();
+
+    for (const [id, ag] of Object.entries(agrupado)) {
+      const tieneReceta   = id in costosPorReceta;
+      const tieneCostoEst = ag.costoEstimado != null && ag.costoEstimado > 0;
+
+      let costoUnitario: number;
+      let fuente: 'receta' | 'estimado' | 'sin_datos';
+
+      if (tieneReceta) {
+        costoUnitario = costosPorReceta[id];
+        fuente = 'receta';
+      } else if (tieneCostoEst) {
+        costoUnitario = ag.costoEstimado!;
+        fuente = 'estimado';
+      } else {
+        costoUnitario = 0;
+        fuente = 'sin_datos';
+      }
+
+      const costoTotal = costoUnitario * ag.cantidadVendida;
+      const ganancia   = ag.ingresoTotal - costoTotal;
+      const margenPct  = ag.ingresoTotal > 0 && fuente !== 'sin_datos'
+        ? Math.round((ganancia / ag.ingresoTotal) * 100)
+        : 0;
+
+      if (fuente !== 'sin_datos') {
+        costoEstimadoTotal += costoTotal;
+        setConCosto.add(id);
+      } else {
+        ingresosNoCosteados += ag.ingresoTotal;
+      }
+
+      detalleGanancias.push({
+        menu_item_id: id,
+        nombre: ag.nombre,
+        cantidadVendida: ag.cantidadVendida,
+        ingresoTotal: ag.ingresoTotal,
+        costoUnitario,
+        costoTotal,
+        ganancia,
+        margenPct,
+        fuente_costo: fuente
+      });
+    }
+
+    detalleGanancias.sort((a, b) => b.ganancia - a.ganancia);
+
+    const gananciaEstimada = totalVentas - costoEstimadoTotal;
+    const baseParaMargen   = totalVentas - ingresosNoCosteados;
+    const margenGlobal     = baseParaMargen > 0
+      ? Math.round((gananciaEstimada / baseParaMargen) * 100)
+      : 0;
+
+    return {
+      totalVentas,
+      costoEstimado:     costoEstimadoTotal,
+      gananciaEstimada,
+      margenGlobal,
+      platosConCosto:    setConCosto.size,
+      platosSinCosto:    menuIds.length - setConCosto.size,
+      ingresosNoCosteados,
+      detalleGanancias
     };
   }
 

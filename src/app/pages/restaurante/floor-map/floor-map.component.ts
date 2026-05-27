@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, Output, EventEmitter, ChangeDetectorRef }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RestaurantTablesService } from '../../../services/restaurant-tables.service';
+import { OfflineService } from '../../../services/offline.service';
 import {
   TableWithOrder, RestaurantZone,
   COLOR_ESTADO_MESA, LABEL_ESTADO_MESA, EstadoMesa
@@ -34,11 +35,20 @@ export class FloorMapComponent implements OnInit, OnDestroy {
   readonly labelEstado = LABEL_ESTADO_MESA;
   readonly estadosLeyenda: EstadoMesa[] = ['libre', 'ocupada', 'reservada', 'limpieza', 'bloqueada'];
 
-  constructor(private tablesService: RestaurantTablesService, private cdr: ChangeDetectorRef) {}
+  modoOffline = false;
+
+  constructor(
+    private tablesService: RestaurantTablesService,
+    private offlineService: OfflineService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   async ngOnInit(): Promise<void> {
     await this.cargarDatos();
-    this.tablesService.suscribirCambios(() => this.cargarDatos());
+    // Solo suscribir cambios en tiempo real si estamos online
+    if (this.offlineService.isOnline) {
+      this.tablesService.suscribirCambios(() => this.cargarDatos());
+    }
   }
 
   ngOnDestroy(): void {
@@ -49,10 +59,39 @@ export class FloorMapComponent implements OnInit, OnDestroy {
     try {
       this.cargando = true;
       this.errorMsg = '';
+
+      if (!this.offlineService.isOnline) {
+        // Modo offline: cargar mesas desde caché local
+        this.modoOffline = true;
+        const negocioId = localStorage.getItem('logos_negocio_id') || '';
+        const mesasLocal = await this.offlineService.obtenerMesasLocales(negocioId);
+        if (mesasLocal.length) {
+          this.mesas = mesasLocal as any[];
+          // Reconstruir zonas únicas desde las mesas cacheadas
+          const zonasMap = new Map<string, any>();
+          mesasLocal.forEach(m => {
+            if (m.zona && !zonasMap.has((m.zona as any).id)) {
+              zonasMap.set((m.zona as any).id, m.zona);
+            }
+          });
+          this.zonas = Array.from(zonasMap.values());
+        } else {
+          this.errorMsg = 'Sin conexión y sin datos en caché. Conéctate al menos una vez.';
+        }
+        this.filtrarPorZona();
+        return;
+      }
+
+      this.modoOffline = false;
       [this.zonas, this.mesas] = await Promise.all([
         this.tablesService.cargarZonas(),
         this.tablesService.cargarMesasConOrden()
       ]);
+
+      // Cachear mesas para uso offline futuro
+      const negocioId = localStorage.getItem('logos_negocio_id') || '';
+      this.offlineService.cachearMesas(negocioId, this.mesas as any).catch(() => {});
+
       this.filtrarPorZona();
     } catch (e: any) {
       this.errorMsg = e.message || 'Error al cargar mesas';

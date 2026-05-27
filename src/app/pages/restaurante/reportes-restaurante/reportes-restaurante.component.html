@@ -86,6 +86,16 @@
           <p class="rr-kpi-value">{{ formatMoneda(resumen.totalPropinas) }}</p>
         </div>
       </div>
+      @if (ganancias) {
+        <div class="rr-kpi-card kpi-ganancia">
+          <div class="rr-kpi-icon"><i class="bi bi-graph-up"></i></div>
+          <div>
+            <p class="rr-kpi-label">Ganancia Estimada</p>
+            <p class="rr-kpi-value">{{ formatMoneda(ganancias.gananciaEstimada) }}</p>
+            <p class="rr-kpi-sub">{{ ganancias.margenGlobal }}% margen</p>
+          </div>
+        </div>
+      }
       @if (resumen.totalDescuentos > 0) {
         <div class="rr-kpi-card kpi-descuento">
           <div class="rr-kpi-icon"><i class="bi bi-scissors"></i></div>
@@ -116,6 +126,9 @@
       </button>
       <button class="rr-tab" [class.active]="tabActiva === 'pagos'"      (click)="tabActiva = 'pagos'">
         <i class="bi bi-credit-card-fill"></i> Pagos
+      </button>
+      <button class="rr-tab rr-tab-highlight" [class.active]="tabActiva === 'ganancias'" (click)="tabActiva = 'ganancias'">
+        <i class="bi bi-graph-up-arrow"></i> Ganancias
       </button>
       <button class="rr-tab" [class.active]="tabActiva === 'margenes'"   (click)="tabActiva = 'margenes'">
         <i class="bi bi-pie-chart-fill"></i> Márgenes
@@ -245,6 +258,149 @@
           </div>
         }
       </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════
+         TAB: GANANCIAS DEL PERÍODO
+    ══════════════════════════════════════════════════════ -->
+    @if (tabActiva === 'ganancias') {
+
+      @if (!ganancias || ganancias.totalVentas === 0) {
+        <div class="rr-card">
+          <div class="rr-empty">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>Sin ventas en el período seleccionado</span>
+          </div>
+        </div>
+      } @else {
+
+        <!-- KPIs de ganancia -->
+        <div class="rr-ganancia-kpis">
+          <div class="rr-gkpi rr-gkpi-ingresos">
+            <div class="rr-gkpi-icon"><i class="bi bi-cash-stack"></i></div>
+            <div class="rr-gkpi-body">
+              <span class="rr-gkpi-lbl">Ingresos</span>
+              <span class="rr-gkpi-val">{{ formatMoneda(ganancias.totalVentas) }}</span>
+            </div>
+          </div>
+          <div class="rr-gkpi-operator">−</div>
+          <div class="rr-gkpi rr-gkpi-costo">
+            <div class="rr-gkpi-icon"><i class="bi bi-box-seam"></i></div>
+            <div class="rr-gkpi-body">
+              <span class="rr-gkpi-lbl">Costo estimado (COGS)</span>
+              <span class="rr-gkpi-val">{{ formatMoneda(ganancias.costoEstimado) }}</span>
+            </div>
+          </div>
+          <div class="rr-gkpi-operator">=</div>
+          <div class="rr-gkpi rr-gkpi-ganancia">
+            <div class="rr-gkpi-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="rr-gkpi-body">
+              <span class="rr-gkpi-lbl">Ganancia Bruta</span>
+              <span class="rr-gkpi-val">{{ formatMoneda(ganancias.gananciaEstimada) }}</span>
+              <span class="rr-gkpi-badge rr-margen-badge {{ badgeGanancia(ganancias.margenGlobal) }}">
+                {{ ganancias.margenGlobal }}% margen
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra visual ingresos vs costo vs ganancia -->
+        <div class="rr-card rr-ganancia-barra-card">
+          <div class="rr-ganancia-barra-wrap">
+            <div class="rr-ganancia-seg rr-seg-costo"
+              [style.width]="ganancias.totalVentas > 0 ? ((ganancias.costoEstimado / ganancias.totalVentas) * 100) + '%' : '0%'">
+              @if (ganancias.totalVentas > 0 && (ganancias.costoEstimado / ganancias.totalVentas) > 0.1) {
+                <span class="rr-seg-label">Costo {{ ((ganancias.costoEstimado / ganancias.totalVentas) * 100) | number:'1.0-0' }}%</span>
+              }
+            </div>
+            <div class="rr-ganancia-seg rr-seg-ganancia"
+              [style.width]="ganancias.totalVentas > 0 ? ((ganancias.gananciaEstimada / ganancias.totalVentas) * 100) + '%' : '0%'">
+              @if (ganancias.totalVentas > 0 && (ganancias.gananciaEstimada / ganancias.totalVentas) > 0.1) {
+                <span class="rr-seg-label">Ganancia {{ ((ganancias.gananciaEstimada / ganancias.totalVentas) * 100) | number:'1.0-0' }}%</span>
+              }
+            </div>
+          </div>
+          @if (ganancias.platosSinCosto > 0) {
+            <div class="rr-info-banner mt-3">
+              <i class="bi bi-info-circle-fill me-2"></i>
+              <strong>{{ ganancias.platosSinCosto }}</strong> plato(s) sin costo configurado —
+              {{ formatMoneda(ganancias.ingresosNoCosteados) }} en ingresos no están incluidos en el cálculo de COGS.
+              Para mayor precisión, asigna un costo estimado a cada plato.
+            </div>
+          }
+        </div>
+
+        <!-- Tabla detallada por plato -->
+        <div class="rr-card">
+          <div class="rr-card-header">
+            <h6 class="rr-card-title"><i class="bi bi-table me-2"></i>Detalle de Ganancia por Plato</h6>
+            <span class="rr-card-sub">{{ ganancias.platosConCosto }} platos costeados · {{ ganancias.platosSinCosto }} sin costo</span>
+          </div>
+          <div class="rr-table-wrap">
+            <table class="rr-table">
+              <thead>
+                <tr>
+                  <th>Plato</th>
+                  <th class="text-end">Vendidos</th>
+                  <th class="text-end">Ingresos</th>
+                  <th class="text-end">Costo Total</th>
+                  <th class="text-end">Ganancia</th>
+                  <th class="text-center">Margen</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (g of ganancias.detalleGanancias; track trackByGanancia($index, g)) {
+                  <tr [class.sin-receta]="g.fuente_costo === 'sin_datos'">
+                    <td class="fw-semibold">
+                      {{ g.nombre }}
+                      @if (g.fuente_costo === 'receta') {
+                        <span class="badge bg-success-subtle text-success ms-1" style="font-size:.62rem" title="Costo desde receta de inventario">receta</span>
+                      }
+                      @if (g.fuente_costo === 'estimado') {
+                        <span class="badge bg-info-subtle text-info ms-1" style="font-size:.62rem" title="Costo estimado manual">est.</span>
+                      }
+                      @if (g.fuente_costo === 'sin_datos') {
+                        <span class="badge bg-secondary-subtle text-secondary ms-1" style="font-size:.62rem">sin costo</span>
+                      }
+                    </td>
+                    <td class="text-end">{{ g.cantidadVendida }}</td>
+                    <td class="text-end font-monospace">{{ formatMoneda(g.ingresoTotal) }}</td>
+                    <td class="text-end font-monospace text-muted">
+                      @if (g.fuente_costo === 'sin_datos') { — }
+                      @else { {{ formatMoneda(g.costoTotal) }} }
+                    </td>
+                    <td class="text-end font-monospace fw-bold"
+                      [class]="g.fuente_costo === 'sin_datos' ? 'text-muted' : colorGanancia(g.margenPct)">
+                      @if (g.fuente_costo === 'sin_datos') { — }
+                      @else { {{ formatMoneda(g.ganancia) }} }
+                    </td>
+                    <td class="text-center">
+                      @if (g.fuente_costo === 'sin_datos') {
+                        <span class="rr-badge-neutral">—</span>
+                      } @else {
+                        <span class="rr-margen-badge {{ badgeGanancia(g.margenPct) }}">{{ g.margenPct }}%</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="rr-table-total">
+                  <td class="fw-bold">TOTAL</td>
+                  <td></td>
+                  <td class="text-end font-monospace fw-bold">{{ formatMoneda(ganancias.totalVentas) }}</td>
+                  <td class="text-end font-monospace fw-bold text-muted">{{ formatMoneda(ganancias.costoEstimado) }}</td>
+                  <td class="text-end font-monospace fw-bold text-success">{{ formatMoneda(ganancias.gananciaEstimada) }}</td>
+                  <td class="text-center">
+                    <span class="rr-margen-badge {{ badgeGanancia(ganancias.margenGlobal) }}">{{ ganancias.margenGlobal }}%</span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+      } <!-- end ganancias -->
     }
 
     <!-- ══════════════════════════════════════════════════════
