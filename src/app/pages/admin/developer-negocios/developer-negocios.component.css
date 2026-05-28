@@ -128,3 +128,56 @@
     transition: background .15s;
 }
 .modulo-chip-on .modulo-chip-dot { background: #6366f1; }
+
+/* ── Tab Roles ─────────────────────────────────────── */
+.dn-rol-list { display: flex; flex-direction: column; gap: 8px; }
+.dn-rol-card {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 10px 14px; background: #fff;
+  transition: box-shadow .15s;
+}
+.dn-rol-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.dn-rol-color { width: 10px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+.dn-rol-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dn-rol-nombre { font-weight: 600; font-size: .9rem; color: #111827; }
+.dn-rol-desc { font-size: .78rem; color: #6b7280; }
+.dn-rol-perms { font-size: .75rem; color: #6366f1; }
+.dn-rol-actions { display: flex; gap: 6px; }
+
+/* Color picker */
+.dn-color-row { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.dn-color-dot {
+  width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+  transition: transform .15s; border: 2px solid transparent;
+}
+.dn-color-dot:hover { transform: scale(1.2); }
+.dn-color-dot.selected { border-color: #111827; transform: scale(1.15); }
+
+/* Permisos */
+.dn-permisos-wrap {
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 340px; overflow-y: auto;
+  border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 12px;
+}
+.dn-perm-grupo { display: flex; flex-direction: column; gap: 6px; }
+.dn-perm-cat-header {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+}
+.dn-perm-cat-label {
+  font-size: .72rem; font-weight: 700; color: #374151;
+  letter-spacing: .06em;
+}
+.dn-perm-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 4px; }
+.dn-perm-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: .78rem;
+  border: 1.5px solid #e5e7eb; background: #f9fafb;
+  cursor: pointer; transition: all .15s; color: #374151;
+}
+.dn-perm-chip input { display: none; }
+.dn-perm-chip.active {
+  background: #eef2ff; border-color: #6366f1; color: #4338ca; font-weight: 600;
+}

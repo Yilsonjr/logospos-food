@@ -7,6 +7,7 @@ import { Negocio } from '../../../models/negocio.model';
 import { NegociosService, TipoNegocio, ModuloSistema, MODULOS_POR_TIPO, MODULOS_LABELS, TIPOS_NEGOCIO_LABELS } from '../../../services/negocios.service';
 import { AuthService } from '../../../services/auth.service';
 import { LicenciaService } from '../../../services/licencia.service';
+import { PERMISOS_SISTEMA } from '../../../models/usuario.model';
 import Swal from 'sweetalert2';
 
 interface GrupoModulo {
@@ -155,7 +156,20 @@ export class DeveloperNegociosComponent implements OnInit, OnDestroy {
     // Historial de cambios
     historial: any[] = [];
     cargandoHistorial = false;
-    tabActiva: 'config' | 'historial' = 'config';
+    tabActiva: 'config' | 'historial' | 'roles' = 'config';
+
+    // ── Gestión de Roles del tenant ───────────────────────────
+    rolesNegocio: any[] = [];
+    cargandoRoles = false;
+    mostrarEditorRol = false;
+    rolEditando: any = null;
+    guardandoRol = false;
+    formularioRol: { nombre: string; descripcion: string; color: string; permisos: string[] } = {
+        nombre: '', descripcion: '', color: '#3b82f6', permisos: []
+    };
+    permisosSistema = PERMISOS_SISTEMA;
+    permisosAgrupados: { [cat: string]: { clave: string; label: string }[] } = {};
+    coloresRol = ['#dc2626','#ea580c','#d97706','#16a34a','#0891b2','#2563eb','#4f46e5','#7c3aed','#db2777','#6b7280'];
 
     // Filtros
     filtroEstado: '' | 'activa' | 'suspendida' | 'vencida' = '';
@@ -304,6 +318,9 @@ export class DeveloperNegociosComponent implements OnInit, OnDestroy {
         }
         this.tabActiva = 'config';
         this.historial = [];
+        this.rolesNegocio = [];
+        this.mostrarEditorRol = false;
+        this.agruparPermisos();
         this.mostrarModal = true;
         this.cargarHistorial(negocio.id);
     }
@@ -472,5 +489,130 @@ export class DeveloperNegociosComponent implements OnInit, OnDestroy {
             case 'vencida': return 'bg-warning-subtle text-warning';
             default: return 'bg-secondary-subtle text-secondary';
         }
+    }
+
+    // ── Roles del tenant ───────────────────────────────────────
+
+    private get supabase() {
+        return (this.negociosService as any)['supabaseService']?.client;
+    }
+
+    agruparPermisos() {
+        this.permisosAgrupados = {};
+        Object.entries(this.permisosSistema).forEach(([clave, label]) => {
+            const cat = clave.split('.')[0];
+            if (!this.permisosAgrupados[cat]) this.permisosAgrupados[cat] = [];
+            this.permisosAgrupados[cat].push({ clave, label: label as string });
+        });
+    }
+
+    async cargarRolesNegocio() {
+        if (!this.negocioSeleccionado) return;
+        this.cargandoRoles = true;
+        this.cdr.detectChanges();
+        try {
+            const { data, error } = await this.supabase
+                .from('roles')
+                .select('*')
+                .eq('negocio_id', this.negocioSeleccionado.id)
+                .order('nombre', { ascending: true });
+            if (error) throw error;
+            this.rolesNegocio = data || [];
+        } catch (e) {
+            console.error('Error cargando roles:', e);
+        } finally {
+            this.cargandoRoles = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    abrirCrearRol() {
+        this.rolEditando = null;
+        this.formularioRol = { nombre: '', descripcion: '', color: '#3b82f6', permisos: [] };
+        this.mostrarEditorRol = true;
+        this.cdr.detectChanges();
+    }
+
+    abrirEditarRol(rol: any) {
+        this.rolEditando = rol;
+        this.formularioRol = {
+            nombre: rol.nombre,
+            descripcion: rol.descripcion || '',
+            color: rol.color || '#3b82f6',
+            permisos: Array.isArray(rol.permisos) ? [...rol.permisos] : []
+        };
+        this.mostrarEditorRol = true;
+        this.cdr.detectChanges();
+    }
+
+    tienePermiso(clave: string): boolean {
+        return this.formularioRol.permisos.includes(clave);
+    }
+
+    togglePermiso(clave: string) {
+        const idx = this.formularioRol.permisos.indexOf(clave);
+        if (idx > -1) this.formularioRol.permisos.splice(idx, 1);
+        else this.formularioRol.permisos.push(clave);
+    }
+
+    toggleCategoriaPermisos(cat: string) {
+        const claves = (this.permisosAgrupados[cat] || []).map(p => p.clave);
+        const todosActivos = claves.every(c => this.tienePermiso(c));
+        if (todosActivos) {
+            this.formularioRol.permisos = this.formularioRol.permisos.filter(p => !claves.includes(p));
+        } else {
+            claves.forEach(c => { if (!this.tienePermiso(c)) this.formularioRol.permisos.push(c); });
+        }
+    }
+
+    categoriaActiva(cat: string): boolean {
+        return (this.permisosAgrupados[cat] || []).every(p => this.tienePermiso(p.clave));
+    }
+
+    async guardarRol() {
+        if (!this.formularioRol.nombre.trim() || !this.negocioSeleccionado) return;
+        this.guardandoRol = true;
+        try {
+            if (this.rolEditando) {
+                const { error } = await this.supabase.from('roles')
+                    .update({ ...this.formularioRol })
+                    .eq('id', this.rolEditando.id);
+                if (error) throw error;
+            } else {
+                const { error } = await this.supabase.from('roles')
+                    .insert({ ...this.formularioRol, negocio_id: this.negocioSeleccionado.id, activo: true });
+                if (error) throw error;
+            }
+            this.mostrarEditorRol = false;
+            await this.cargarRolesNegocio();
+            Swal.fire({ icon: 'success', title: 'Guardado', timer: 1200, showConfirmButton: false });
+        } catch (e: any) {
+            Swal.fire('Error', e.message || 'No se pudo guardar', 'error');
+        } finally {
+            this.guardandoRol = false;
+            this.cdr.detectChanges();
+        }
+    }
+
+    async eliminarRol(rol: any) {
+        const confirm = await Swal.fire({
+            title: `¿Eliminar rol "${rol.nombre}"?`,
+            text: 'Los usuarios con este rol quedarán sin permisos.',
+            icon: 'warning', showCancelButton: true,
+            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626'
+        });
+        if (!confirm.isConfirmed) return;
+        try {
+            const { error } = await this.supabase.from('roles').delete().eq('id', rol.id);
+            if (error) throw error;
+            await this.cargarRolesNegocio();
+        } catch (e: any) {
+            Swal.fire('Error', e.message || 'No se pudo eliminar', 'error');
+        }
+    }
+
+    get permisosAgrupadosKeys(): string[] {
+        return Object.keys(this.permisosAgrupados);
     }
 }
