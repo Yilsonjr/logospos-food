@@ -145,9 +145,7 @@ export class AuthService {
     // Aplicar JWT al cliente Supabase → todas las queries quedan bajo RLS correcto
     this.supabaseService.setJwt(jwt);
 
-    // JWT siempre en localStorage: ya lleva su propio exp, no hay riesgo de
-    // quedarse colgado — y esto evita que al reabrir el navegador las queries
-    // fallen por falta de JWT (sessionStorage se borra al cerrar el tab).
+    // JWT siempre en localStorage — su propio exp controla la validez
     localStorage.setItem('logos_jwt', jwt);
 
     // Los datos de sesión respetan la opción "recordar"
@@ -156,13 +154,22 @@ export class AuthService {
     storage.setItem('logos_usuario', JSON.stringify(usuario));
     localStorage.setItem('logos_negocio_id', usuario.negocio_id);
 
-    const permisos = await this.cargarPermisosUsuario(usuario.id);
-    await this.guardarUsuarioOffline(usuario, credentials.password, token, expiracion);
-    await this.negociosService.cargarNegocioActual(usuario.negocio_id);
+    // Extraer permisos del rol que ya vino con el usuario (Edge Function hace SELECT *, rol:roles(*))
+    // Esto evita una query extra a la BD que puede fallar si el RLS aún está propagándose.
+    const permisosRol: string[] = usuario.rol?.permisos || [];
+    const permisos = permisosRol.length > 0
+      ? permisosRol
+      : await this.cargarPermisosUsuario(usuario.id); // fallback por si el rol no trajo permisos
+
+    // Cargar datos del negocio en paralelo con el cache offline
+    await Promise.all([
+      this.guardarUsuarioOffline(usuario, credentials.password, token, expiracion),
+      this.negociosService.cargarNegocioActual(usuario.negocio_id)
+    ]);
 
     this.authStateSubject.next({ isAuthenticated: true, usuario, token, permisos });
 
-    console.log('🔐 Login seguro via Edge Function ✅');
+    console.log('🔐 Login seguro via Edge Function ✅', { permisos: permisos.length });
     return { usuario, token, expiracion };
   }
 
@@ -293,41 +300,56 @@ export class AuthService {
     const negocioId = this.getNegocioId();
     return negocioId === '00000000-0000-0000-0000-000000000000';
   }
-  // Verificar si el usuario tiene un permiso específico
+  /**
+   * Verifica si el usuario tiene un permiso.
+   * Soporta dos formatos:
+   *   - Exacto:  "dashboard.ver" === "dashboard.ver"
+   *   - Padre:   "dashboard" cubre "dashboard.ver", "dashboard.stats", etc.
+   * Esto permite que los roles con permisos cortos ("dashboard") den acceso
+   * a rutas que piden permisos granulares ("dashboard.ver").
+   */
   tienePermiso(permiso: string): boolean {
     const currentState = this.authStateSubject.value;
-    // Si es administrador (rol_id 1 o nombre 'admin' / 'super administrador'), tiene acceso total
-    const roleName = (currentState.usuario?.rol?.nombre || '').toLowerCase().trim();
-    if (currentState.usuario?.rol_id === 1 || roleName === 'admin' || roleName === 'super administrador') {
-      return true;
-    }
-    return currentState.permisos.includes(permiso);
+    if (this.esRolAdmin(currentState)) return true;
+    return this.matchPermiso(currentState.permisos, permiso);
   }
 
   // Verificar si el usuario tiene alguno de los permisos
   tieneAlgunPermiso(permisos: string[]): boolean {
     const currentState = this.authStateSubject.value;
-
-    // Si es administrador, acceso total
-    const roleName = (currentState.usuario?.rol?.nombre || '').toLowerCase().trim();
-    if (currentState.usuario?.rol_id === 1 || roleName === 'admin' || roleName === 'super administrador') {
-      return true;
-    }
-
-    return permisos.some(permiso => currentState.permisos.includes(permiso));
+    if (this.esRolAdmin(currentState)) return true;
+    return permisos.some(p => this.matchPermiso(currentState.permisos, p));
   }
 
   // Verificar si el usuario tiene todos los permisos
   tieneTodosPermisos(permisos: string[]): boolean {
     const currentState = this.authStateSubject.value;
+    if (this.esRolAdmin(currentState)) return true;
+    return permisos.every(p => this.matchPermiso(currentState.permisos, p));
+  }
 
-    // Si es administrador, acceso total
-    const roleName = (currentState.usuario?.rol?.nombre || '').toLowerCase().trim();
-    if (currentState.usuario?.rol_id === 1 || roleName === 'admin' || roleName === 'super administrador') {
-      return true;
-    }
+  /**
+   * Devuelve true si el permiso requerido está cubierto por alguno de los
+   * permisos del usuario, ya sea por coincidencia exacta o por prefijo padre.
+   * Ejemplo: usuario tiene ["dashboard"] → cubre "dashboard.ver", "dashboard.stats"
+   */
+  private matchPermiso(permisosUsuario: string[], permisoRequerido: string): boolean {
+    return permisosUsuario.some(p =>
+      p === permisoRequerido ||            // exacto: "dashboard.ver" === "dashboard.ver"
+      permisoRequerido.startsWith(p + '.') // padre:  "dashboard" cubre "dashboard.ver"
+    );
+  }
 
-    return permisos.every(permiso => currentState.permisos.includes(permiso));
+  /** True si el rol es de tipo administrador con acceso total. */
+  private esRolAdmin(state: AuthState): boolean {
+    const roleName = (state.usuario?.rol?.nombre || '').toLowerCase().trim();
+    return (
+      state.usuario?.rol_id === 1 ||
+      roleName === 'admin' ||
+      roleName === 'super administrador' ||
+      roleName === 'administrador' ||
+      roleName === 'super admin'
+    );
   }
 
   // Obtener usuario actual
