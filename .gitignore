@@ -85,3 +85,4 @@ database/restaurant/12_cuentas_credito.sql
 database/restaurant/13_reservas_mesa.sql
 database/fix_secuencias_ncf.sql
 database/restaurant/14_insumos_imagen_migrar_bebidas.sql
+database/restaurant/15_inventario_categoria_vendible.sql

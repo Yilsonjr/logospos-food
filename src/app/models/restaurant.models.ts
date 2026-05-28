@@ -220,6 +220,7 @@ export interface RestaurantInventoryItem {
   id: string;
   negocio_id: string;
   nombre: string;
+  categoria?: string | null;
   unidad_medida: string;
   cantidad_actual: number;
   cantidad_minima: number;

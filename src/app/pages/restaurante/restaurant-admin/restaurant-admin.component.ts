@@ -92,6 +92,44 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
 
   // ── Inventario ────────────────────────────────────────────
   inventarioItems: RestaurantInventoryItem[] = [];
+  private _invBusqueda = '';
+  get invBusqueda(): string { return this._invBusqueda; }
+  set invBusqueda(v: string) { this._invBusqueda = v; this._invPagina = 0; }
+
+  private _invFiltroStock: 'todos' | 'bajo' | 'sin_stock' = 'todos';
+  get invFiltroStock(): 'todos' | 'bajo' | 'sin_stock' { return this._invFiltroStock; }
+  set invFiltroStock(v: 'todos' | 'bajo' | 'sin_stock') { this._invFiltroStock = v; this._invPagina = 0; }
+
+  private _invCategoria = '';
+  get invCategoria(): string { return this._invCategoria; }
+  set invCategoria(v: string) { this._invCategoria = v; this._invPagina = 0; }
+
+  readonly CATEGORIAS_INV = [
+    'Bebida', 'Licor', 'Cerveza', 'Vino',
+    'Carne', 'Pescado', 'Vegetal', 'Lácteo',
+    'Cereal', 'Condimento', 'Embutido', 'Postre',
+    'Limpieza', 'Desechable', 'Otro'
+  ];
+
+  get categoriasFiltroInv(): string[] {
+    const set = new Set(this.inventarioItems.map(i => i.categoria).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }
+
+  get inventarioFiltrado(): RestaurantInventoryItem[] {
+    const q = this._invBusqueda.trim().toLowerCase();
+    return this.inventarioItems.filter(item => {
+      const matchNombre = !q || item.nombre.toLowerCase().includes(q)
+        || (item.proveedor || '').toLowerCase().includes(q)
+        || (item.ubicacion || '').toLowerCase().includes(q);
+      const matchStock =
+        this._invFiltroStock === 'todos'     ? true :
+        this._invFiltroStock === 'bajo'      ? item.stock_bajo === true :
+        this._invFiltroStock === 'sin_stock' ? item.cantidad_actual <= 0 : true;
+      const matchCat = !this._invCategoria || item.categoria === this._invCategoria;
+      return matchNombre && matchStock && matchCat;
+    });
+  }
   movimientos: RestaurantInventoryMovement[] = [];
   invForm: Partial<RestaurantInventoryItem> = {};
   editandoInv: RestaurantInventoryItem | null = null;
@@ -99,6 +137,53 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   mostrarFormEntrada = false;
   entradaForm: { inventory_item_id: string; cantidad: number; razon: string } =
     { inventory_item_id: '', cantidad: 0, razon: '' };
+
+  // Buscador entrada
+  entradaBusqueda = '';
+  entradaItemSeleccionado: RestaurantInventoryItem | null = null;
+  entradaSugerencias: RestaurantInventoryItem[] = [];
+
+  filtrarEntrada(texto: string): void {
+    this.entradaBusqueda = texto;
+    if (!texto.trim()) { this.entradaSugerencias = []; return; }
+    const q = texto.toLowerCase();
+    this.entradaSugerencias = this.inventarioItems
+      .filter(i => i.nombre.toLowerCase().includes(q))
+      .slice(0, 10);
+  }
+
+  seleccionarItemEntrada(item: RestaurantInventoryItem): void {
+    this.entradaForm.inventory_item_id = item.id;
+    this.entradaItemSeleccionado       = item;
+    this.entradaBusqueda               = item.nombre;
+    this.entradaSugerencias            = [];
+  }
+
+  limpiarItemEntrada(): void {
+    this.entradaForm.inventory_item_id = '';
+    this.entradaItemSeleccionado       = null;
+    this.entradaBusqueda               = '';
+    this.entradaSugerencias            = [];
+  }
+
+  // Paginación inventario
+  readonly INV_PAGE_SIZE = 24;
+  private _invPagina = 0;
+  get invPagina(): number { return this._invPagina; }
+  set invPagina(v: number) { this._invPagina = v; }
+
+  get inventarioFiltradoPaginado(): RestaurantInventoryItem[] {
+    const inicio = this.invPagina * this.INV_PAGE_SIZE;
+    return this.inventarioFiltrado.slice(inicio, inicio + this.INV_PAGE_SIZE);
+  }
+
+  get invTotalPaginas(): number {
+    return Math.ceil(this.inventarioFiltrado.length / this.INV_PAGE_SIZE);
+  }
+
+  cambiarPaginaInv(delta: number): void {
+    this.invPagina = Math.max(0, Math.min(this.invTotalPaginas - 1, this.invPagina + delta));
+  }
   invSubTab: 'items' | 'movimientos' = 'items';
 
   // Relación inventario ↔ menú: mapa de inventory_item_id → nombres de platos que lo usan
@@ -127,9 +212,12 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   // Wizard "Crear Producto Vendible" (insumo + menu item + receta 1:1)
   mostrarWizardProducto = false;
   wizardInsumoOrigen: RestaurantInventoryItem | null = null;
-  wizardForm: { nombre: string; precio: number; categoria_id: string } =
-    { nombre: '', precio: 0, categoria_id: '' };
+  wizardForm: { nombre: string; precio: number; categoria_id: string; enviar_a_cocina: boolean } =
+    { nombre: '', precio: 0, categoria_id: '', enviar_a_cocina: false };
   guardandoProducto = false;
+
+  /** Categorías de insumos que NO van a cocina (bebidas) */
+  private readonly CATS_NO_COCINA = ['bebida','licor','cerveza','vino','otro'];
 
   // ── Créditos / Cuentas por Cobrar ────────────────────────
   cuentasCredito: any[] = [];
@@ -158,6 +246,14 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
 
   get hayStockBajo(): boolean {
     return this.inventarioItems.some(i => i.stock_bajo);
+  }
+
+  get countStockBajo(): number {
+    return this.inventarioItems.filter(i => i.stock_bajo).length;
+  }
+
+  get countSinStock(): number {
+    return this.inventarioItems.filter(i => i.cantidad_actual <= 0).length;
   }
 
   constructor(
@@ -663,8 +759,8 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     this.editandoInv = item || null;
     this.invForm = item
       ? { ...item }
-      : { nombre: '', unidad_medida: 'unidad', cantidad_actual: 0, cantidad_minima: 0,
-          costo_unitario: 0, activo: true, imagen_url: null };
+      : { nombre: '', categoria: '', unidad_medida: 'unidad', cantidad_actual: 0,
+          cantidad_minima: 0, costo_unitario: 0, activo: true, imagen_url: null };
     this.mostrarFormInv = true;
   }
 
@@ -729,6 +825,9 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   }
 
   abrirFormEntrada(item?: RestaurantInventoryItem): void {
+    this.entradaItemSeleccionado = item || null;
+    this.entradaBusqueda         = item?.nombre || '';
+    this.entradaSugerencias      = [];
     this.entradaForm = {
       inventory_item_id: item?.id || '',
       cantidad: 0,
@@ -799,10 +898,17 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
 
   abrirWizardProducto(insumo: RestaurantInventoryItem): void {
     this.wizardInsumoOrigen = insumo;
+    const esNoCocina = this.CATS_NO_COCINA.includes((insumo.categoria || '').toLowerCase());
+    // Intentar preseleccionar la categoría del menú que más se parezca al insumo
+    const catSugerida = this.categorias.find(c =>
+      (insumo.categoria || '').toLowerCase().includes(c.nombre.toLowerCase()) ||
+      c.nombre.toLowerCase().includes((insumo.categoria || '').toLowerCase())
+    ) || this.categorias[0];
     this.wizardForm = {
       nombre: insumo.nombre,
       precio: 0,
-      categoria_id: this.categorias[0]?.id || ''
+      categoria_id: catSugerida?.id || '',
+      enviar_a_cocina: !esNoCocina
     };
     this.mostrarWizardProducto = true;
   }
@@ -817,15 +923,24 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     this.guardandoProducto = true;
     try {
       const menuItem = await this.ordersService.crearMenuItem({
-        categoria_id: this.wizardForm.categoria_id,
-        nombre: this.wizardForm.nombre,
-        descripcion: '',
-        precio: this.wizardForm.precio,
-        tiempo_preparacion_minutos: 0,
-        notas_cocina: '',
-        requiere_inventario: true,
-        disponible: true
+        categoria_id:                this.wizardForm.categoria_id,
+        nombre:                      this.wizardForm.nombre,
+        descripcion:                 '',
+        precio:                      this.wizardForm.precio,
+        costo_estimado:              this.wizardInsumoOrigen.costo_unitario || null,
+        tiempo_preparacion_minutos:  0,
+        notas_cocina:                '',
+        requiere_inventario:         true,
+        enviar_a_cocina:             this.wizardForm.enviar_a_cocina,
+        disponible:                  true
       });
+      // Heredar imagen del insumo si tiene una
+      if (this.wizardInsumoOrigen.imagen_url) {
+        await this.supabaseService.client
+          .from('menu_items')
+          .update({ imagen_url: this.wizardInsumoOrigen.imagen_url })
+          .eq('id', menuItem.id);
+      }
 
       await this.inventoryService.guardarReceta(menuItem.id, [{
         menu_item_id: menuItem.id,

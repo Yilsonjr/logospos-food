@@ -592,6 +592,40 @@
   font-size: 0.75rem;
 }
 
+/* ── Paginación inventario ────────────────────────── */
+.inv-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+.inv-pag-btn {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #4f46e5;
+  font-size: .85rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.inv-pag-btn:hover:not(:disabled) { background: #eef2ff; border-color: #6366f1; }
+.inv-pag-btn:disabled { opacity: .35; cursor: not-allowed; }
+.inv-pag-info {
+  font-size: .83rem;
+  font-weight: 700;
+  color: #374151;
+}
+.inv-pag-total {
+  font-weight: 400;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
 /* ── Imagen insumo ────────────────────────────────── */
 .inv-imagen-upload-row {
   display: flex;
@@ -732,6 +766,90 @@
   padding: 0.65rem 0.75rem;
 }
 
+/* ── Inventario: buscador ──────────────────────────── */
+.inv-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.inv-search-input-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+.inv-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: .8rem;
+  pointer-events: none;
+}
+.inv-search-input {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  border-radius: 10px !important;
+  font-size: .85rem;
+}
+.inv-search-input:focus { border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15); }
+.inv-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: .8rem;
+  padding: 2px;
+}
+.inv-search-clear:hover { color: #ef4444; }
+
+/* Select categoría */
+.inv-cat-select {
+  width: auto;
+  min-width: 160px;
+  border-radius: 10px !important;
+  font-size: .82rem;
+  flex-shrink: 0;
+}
+
+/* Pills de filtro */
+.inv-filter-pills {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.inv-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: .77rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.inv-filter-pill:hover { border-color: #6366f1; color: #4f46e5; background: #f0f0ff; }
+.inv-filter-pill.active { background: #eef2ff; border-color: #6366f1; color: #4f46e5; }
+.inv-pill-warning.active { background: #fffbeb; border-color: #f59e0b; color: #d97706; }
+.inv-pill-danger.active  { background: #fff1f2; border-color: #f87171; color: #dc2626; }
+.inv-pill-count {
+  background: #e2e8f0;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: .68rem;
+}
+.inv-filter-pill.active .inv-pill-count { background: rgba(99,102,241,.15); }
+
 /* ── Inventario: tarjetas ──────────────────────────── */
 .inv-cards-grid {
   display: grid;
@@ -764,8 +882,20 @@
   font-size: 1rem;
   flex-shrink: 0;
 }
-.inv-icon-ok    { background: #f0fdf4; color: #16a34a; }
+.inv-cat-badge {
+  font-size: .62rem;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #4338ca;
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.inv-icon-ok     { background: #f0fdf4; color: #16a34a; }
 .inv-icon-danger { background: #fef2f2; color: #dc2626; }
+.inv-icon-img    { background: transparent; padding: 0; overflow: hidden; }
+.inv-card-img    { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
 .inv-card-title-wrap { flex: 1; min-width: 0; }
 .inv-card-nombre {
   display: block;
@@ -835,6 +965,49 @@
   transition: background .12s;
 }
 .inv-crear-btn:hover { background: #e0e7ff; }
+
+/* ── Wizard Hacer Vendible ─────────────────────────────── */
+.wizard-vendible { max-width: 480px; }
+
+.wizard-header-img {
+  width: 32px; height: 32px;
+  border-radius: 6px; object-fit: cover;
+  border: 2px solid rgba(255,255,255,.4);
+}
+
+.wizard-insumo-info {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 8px 12px;
+  font-size: .82rem; color: #475569;
+}
+
+.wizard-explain {
+  font-size: .8rem;
+  line-height: 1.4;
+}
+
+.wizard-margen-tip {
+  font-size: .72rem; color: #16a34a; font-weight: 600;
+  margin-top: 2px;
+}
+
+.wizard-cocina-toggle {
+  background: #fff8f0;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: background .15s, border-color .15s;
+}
+.wizard-cocina-toggle.wizard-cocina-off {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.wizard-cocina-tip {
+  font-size: .72rem; color: #6b7280;
+  margin-top: 4px; padding-left: 2.2rem;
+}
 
 /* Acciones */
 .inv-card-actions {
