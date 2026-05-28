@@ -96,20 +96,23 @@ Deno.serve(async (req: Request) => {
     const expiracion    = new Date()
     expiracion.setHours(expiracion.getHours() + horasSession)
 
-    await supabase.from('sesiones').insert({
+    const { error: errSesion } = await supabase.from('sesiones').insert({
       usuario_id:       usuario.id,
       token:            sessionToken,
       fecha_inicio:     new Date().toISOString(),
       fecha_expiracion: expiracion.toISOString(),
       activa:           true,
     })
+    if (errSesion) console.error('[auth-login] Error insertando sesión:', errSesion)
 
-    await supabase.from('usuarios')
+    const { error: errUpdate } = await supabase.from('usuarios')
       .update({ ultimo_acceso: new Date().toISOString() })
       .eq('id', usuario.id)
+    if (errUpdate) console.error('[auth-login] Error actualizando ultimo_acceso:', errUpdate)
 
     // ── 5. Firmar JWT con el secret de Supabase ───────────────
     const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET')!
+    console.log('[auth-login] jwtSecret presente:', !!jwtSecret)
     const ahora     = Math.floor(Date.now() / 1000)
 
     const jwt = await firmarJWT({
@@ -138,9 +141,10 @@ Deno.serve(async (req: Request) => {
       usuario:    usuarioSeguro,
     }, 200)
 
-  } catch (err) {
-    console.error('[auth-login] Error:', err)
-    return json({ error: 'Error interno del servidor' }, 500)
+  } catch (err: any) {
+    console.error('[auth-login] Error:', err?.message ?? err)
+    console.error('[auth-login] Stack:', err?.stack ?? 'sin stack')
+    return json({ error: 'Error interno del servidor', detalle: err?.message ?? String(err) }, 500)
   }
 })
 
