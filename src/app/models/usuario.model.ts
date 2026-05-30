@@ -10,6 +10,7 @@ export interface Usuario {
   rol_id: number;
   rol?: Rol; // Para mostrar en UI
   negocio_id: string; // ID del negocio al que pertenece (UUID)
+  negocio?: { id: string; nombre: string }; // Join con negocios para mostrar en UI
   activo: boolean;
   ultimo_acceso?: string;
   created_at?: string;

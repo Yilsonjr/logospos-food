@@ -24,6 +24,8 @@ export class UsuariosComponent implements OnInit, OnDestroy {
   filtroTexto = '';
   filtroRol = '';
   filtroEstado = 'todos';
+  filtroNegocio = '';
+  negociosDisponibles: { id: string; nombre: string }[] = [];
   vistaActual: 'tarjetas' | 'tabla' = 'tarjetas';
   menuAbiertoId: number | null = null;
 
@@ -55,6 +57,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     total: 0,
     activos: 0,
     inactivos: 0,
+    negocios: 0,
     porRol: [] as { rol: string; cantidad: number; color: string }[]
   };
 
@@ -75,6 +78,10 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     // Suscribirse a los datos
     const usuariosSub = this.usuariosService.usuarios$.subscribe(usuarios => {
       this.usuarios = usuarios;
+      // Construir lista única de negocios para el filtro
+      const map = new Map<string, string>();
+      usuarios.forEach(u => { if (u.negocio) map.set(u.negocio.id, u.negocio.nombre); });
+      this.negociosDisponibles = [...map.entries()].map(([id, nombre]) => ({ id, nombre }));
       this.aplicarFiltros();
       this.actualizarEstadisticas();
       this.cdr.detectChanges();
@@ -145,6 +152,11 @@ export class UsuariosComponent implements OnInit, OnDestroy {
       filtrados = filtrados.filter(usuario => usuario.activo === activo);
     }
 
+    // Filtro por negocio
+    if (this.filtroNegocio) {
+      filtrados = filtrados.filter(u => u.negocio_id === this.filtroNegocio);
+    }
+
     this.usuariosFiltrados = filtrados;
     this.menuAbiertoId = null; // Cerrar menús al filtrar
     this.cdr.detectChanges();
@@ -177,6 +189,7 @@ export class UsuariosComponent implements OnInit, OnDestroy {
     this.estadisticas.total = this.usuarios.length;
     this.estadisticas.activos = this.usuarios.filter(u => u.activo).length;
     this.estadisticas.inactivos = this.estadisticas.total - this.estadisticas.activos;
+    this.estadisticas.negocios = new Set(this.usuarios.map(u => u.negocio_id).filter(Boolean)).size;
 
     this.estadisticas.porRol = this.roles.map(rol => ({
       rol: rol.nombre,

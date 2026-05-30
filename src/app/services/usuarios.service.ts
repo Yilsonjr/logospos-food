@@ -29,7 +29,8 @@ export class UsuariosService {
         .from('usuarios')
         .select(`
           *,
-          roles (*)
+          roles (*),
+          negocios (id, nombre)
         `)
         .order('nombre', { ascending: true });
 
@@ -50,7 +51,8 @@ export class UsuariosService {
 
       const usuariosConRol = data?.map(usuario => ({
         ...usuario,
-        rol: usuario.roles
+        rol: usuario.roles,
+        negocio: usuario.negocios
       })) || [];
 
       this.usuariosSubject.next(usuariosConRol);
