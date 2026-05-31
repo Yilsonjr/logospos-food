@@ -1051,11 +1051,14 @@
               <div class="col-4">
                 <div class="ra-field-group">
                   <label class="ra-label"><i class="fa-solid fa-ruler me-1"></i>Unidad *</label>
-                  <select class="form-select" [(ngModel)]="invForm.unidad_medida">
+                  <input type="text" class="form-control" list="lista-unidades"
+                    [(ngModel)]="invForm.unidad_medida" name="unidad_medida"
+                    placeholder="unidad, kg, litro…" autocomplete="off" required>
+                  <datalist id="lista-unidades">
                     @for (u of unidades; track u) {
-                      <option [value]="u">{{ u }}</option>
+                      <option [value]="u"></option>
                     }
-                  </select>
+                  </datalist>
                 </div>
               </div>
               <div class="col-12">

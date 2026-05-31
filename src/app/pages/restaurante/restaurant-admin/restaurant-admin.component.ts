@@ -265,7 +265,16 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   negocioTasaItbis = 0;
   filtroEstadoOrden = '';
 
-  readonly unidades = ['unidad', 'kg', 'g', 'litro', 'ml', 'botella', 'caja', 'docena', 'porción'];
+  readonly unidades = [
+    // Conteo
+    'unidad', 'docena', 'par', 'paquete', 'caja', 'bandeja', 'rollo',
+    // Peso
+    'kg', 'g', 'lb', 'oz',
+    // Volumen
+    'litro', 'ml', 'galón', 'botella', 'lata', 'barril',
+    // Cocina
+    'porción', 'ración', 'taza', 'cucharada', 'cucharadita',
+  ];
 
   get usaInventario(): boolean {
     return this.negociosService.tieneModulo('restaurante_inventario');
