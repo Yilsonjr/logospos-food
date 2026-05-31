@@ -1114,13 +1114,25 @@ ${piePagina}
     const negocioId = localStorage.getItem('logos_negocio_id') || '';
     const { data, error } = await this.supabaseService.client
       .from('cuentas_por_cobrar')
-      .select(`*, abonos:pagos_cuentas(id, monto, metodo_pago, created_at)`)
+      .select(`*, clientes(nombre), abonos:pagos_cuentas(id, monto, metodo_pago, created_at)`)
       .eq('negocio_id', negocioId)
       .ilike('concepto', 'Restaurante%')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    this.cuentasCredito = data || [];
+
+    // Resolver nombre: cliente registrado > nombre en concepto > 'Sin nombre'
+    this.cuentasCredito = (data || []).map(c => ({
+      ...c,
+      cliente_nombre: c.clientes?.nombre || this.extraerNombreDeConcepto(c.concepto) || 'Sin nombre'
+    }));
     this.cdr.detectChanges();
+  }
+
+  private extraerNombreDeConcepto(concepto: string): string {
+    // Formato: "Restaurante Mesa X — NombreCliente"
+    const sep = concepto?.indexOf('—');
+    if (sep !== -1) return concepto.substring(sep + 1).trim();
+    return '';
   }
 
   get creditosFiltrados(): any[] {

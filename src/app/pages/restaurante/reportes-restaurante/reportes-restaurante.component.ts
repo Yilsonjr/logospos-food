@@ -102,32 +102,34 @@ export class ReportesRestauranteComponent implements OnInit {
   async cargarTodo(): Promise<void> {
     this.cargando = true;
     this.cdr.detectChanges();
-    try {
-      const f = this.filtro;
-      const [resumen, dias, top, pagos, cocina, ganancias] = await Promise.all([
-        this.reportsService.cargarResumenVentas(f),
-        this.reportsService.cargarVentasPorDia(f),
-        this.reportsService.cargarTopPlatos(f),
-        this.reportsService.cargarPagosPorMetodo(f),
-        this.reportsService.cargarRendimientoCocina(f),
-        this.reportsService.cargarGanancias(f)
-      ]);
-      this.resumen        = resumen;
-      this.ventasPorDia   = dias;
-      this.topPlatos      = top;
-      this.pagosPorMetodo = pagos;
-      this.cocina         = cocina;
-      this.ganancias      = ganancias;
 
-      // Márgenes e inventario
-      await this.cargarMargenes();
-      await this.cargarInventario();
-    } catch (e: any) {
-      console.error('[Reportes]', e.message);
-    } finally {
-      this.cargando = false;
-      this.cdr.detectChanges();
-    }
+    const f = this.filtro;
+
+    // Cada sección falla de forma independiente — una query rota no bloquea las demás
+    const [resumen, dias, top, pagos, cocina, ganancias] = await Promise.allSettled([
+      this.reportsService.cargarResumenVentas(f),
+      this.reportsService.cargarVentasPorDia(f),
+      this.reportsService.cargarTopPlatos(f),
+      this.reportsService.cargarPagosPorMetodo(f),
+      this.reportsService.cargarRendimientoCocina(f),
+      this.reportsService.cargarGanancias(f)
+    ]);
+
+    if (resumen.status  === 'fulfilled') this.resumen        = resumen.value;
+    if (dias.status     === 'fulfilled') this.ventasPorDia   = dias.value;
+    if (top.status      === 'fulfilled') this.topPlatos      = top.value;
+    if (pagos.status    === 'fulfilled') this.pagosPorMetodo = pagos.value;
+    if (cocina.status   === 'fulfilled') this.cocina         = cocina.value;
+    if (ganancias.status === 'fulfilled') this.ganancias     = ganancias.value;
+
+    // Inventario y márgenes siempre se cargan, independiente de los demás
+    await Promise.allSettled([
+      this.cargarMargenes().catch(e => console.warn('[Reportes] márgenes:', e.message)),
+      this.cargarInventario().catch(e => console.warn('[Reportes] inventario:', e.message))
+    ]);
+
+    this.cargando = false;
+    this.cdr.detectChanges();
   }
 
   async cargarMargenes(): Promise<void> {

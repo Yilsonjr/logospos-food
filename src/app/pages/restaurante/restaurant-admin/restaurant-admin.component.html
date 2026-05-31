@@ -1851,8 +1851,8 @@
             <tbody>
               @for (c of creditosFiltrados; track c.id) {
                 <tr class="align-middle">
-                  <td class="fw-bold">{{ c.cliente_nombre }}</td>
-                  <td class="font-monospace text-secondary small">#{{ c.order_id?.slice(-6)?.toUpperCase() || 'N/A' }}</td>
+                  <td class="fw-bold">{{ c.cliente_nombre || '—' }}</td>
+                  <td class="text-secondary small" [title]="c.concepto">{{ c.concepto }}</td>
                   <td class="small text-muted">{{ formatearFecha(c.created_at) }}</td>
                   <td class="text-end font-monospace">RD$ {{ c.monto_total | number:'1.2-2' }}</td>
                   <td class="text-end font-monospace fw-bold"
