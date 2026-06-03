@@ -237,33 +237,30 @@ export class RestaurantTablesService {
   // REALTIME
   // ============================================================
 
-  /** Suscribirse a cambios en tiempo real de mesas y órdenes */
+  /** Suscribirse a cambios en tiempo real de mesas y órdenes.
+   *  Sin filtro server-side para compatibilidad con plan gratuito de Supabase.
+   *  El filtrado por negocio_id ocurre en las queries de recarga. */
   suscribirCambios(onCambio?: () => void): void {
     this.desuscribir();
 
     this.realtimeChannel = this.supabaseService.client
-      .channel(`rt_tables_${this.negocioId}`)
+      .channel('rt_restaurant_tables')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'restaurant_tables',
-        filter: `negocio_id=eq.${this.negocioId}`
+        table: 'restaurant_tables'
       }, async () => {
-        await this.cargarMesas();
         if (onCambio) onCambio();
       })
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'restaurant_orders',
-        filter: `negocio_id=eq.${this.negocioId}`
+        table: 'restaurant_orders'
       }, async () => {
         if (onCambio) onCambio();
       })
       .subscribe((status: string) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('[RestaurantTablesService] Realtime conectado');
-        }
+        console.log('[RestaurantTablesService] Realtime status:', status);
       });
   }
 

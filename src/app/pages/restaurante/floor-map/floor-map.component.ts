@@ -38,7 +38,7 @@ export class FloorMapComponent implements OnInit, OnDestroy {
   modoOffline = false;
 
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
-  private readonly POLLING_MS = 15_000;
+  private readonly POLLING_MS = 8_000;
 
   constructor(
     private tablesService: RestaurantTablesService,
