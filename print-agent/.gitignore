@@ -1,7 +1,9 @@
 node_modules/
 dist/
 certs/
-logs/*.log
+logs/
 sea-prep.blob
 *.pem
 *.pfx
+# NSSM es un binario externo — descargar de https://nssm.cc/download
+nssm/
