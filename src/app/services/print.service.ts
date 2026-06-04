@@ -288,9 +288,13 @@ export class PrintService {
       linea(izq + ' '.repeat(espacio) + der);
     };
 
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON, ...FONT_DOUBLE);
-    linea(params.negocioNombre.substring(0, 20));
-    push(...FONT_NORMAL, ...BOLD_OFF);
+    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON);
+    if (params.negocioNombre.length <= Math.floor(chars / 2)) {
+      push(...FONT_DOUBLE); linea(params.negocioNombre); push(...FONT_NORMAL);
+    } else {
+      linea(params.negocioNombre);
+    }
+    push(...BOLD_OFF);
     linea('PRE-CUENTA');
     linea('-- DOCUMENTO NO FISCAL --');
     sep('=');
@@ -428,7 +432,11 @@ export class PrintService {
 
     // Cabecera
     push(...INIT, ...ALIGN_CENTER, ...BOLD_ON, ...FONT_DOUBLE);
-    linea(negocioNombre.substring(0, 20));
+    if (negocioNombre.length <= Math.floor(chars / 2)) {
+      push(...FONT_DOUBLE); linea(negocioNombre); push(...FONT_NORMAL);
+    } else {
+      linea(negocioNombre);
+    }
     push(...FONT_NORMAL, ...BOLD_OFF);
     sep('=');
 
