@@ -410,6 +410,22 @@ export class BillSplitComponent implements OnInit {
       cuenta.pagado = true;
       this.cdr.detectChanges();
 
+      // Imprimir ticket de esta cuenta inmediatamente
+      let imprimioTermica = false;
+      try {
+        imprimioTermica = await this.printService.imprimirReciboRestaurant({
+          orden: this.orden,
+          propina: cuenta.propina,
+          formaPago: cuenta.forma_pago,
+          negocioNombre: this.negocioNombre
+        });
+      } catch {
+        console.warn('[BillSplit] Térmica no disponible, usando navegador');
+      }
+      if (!imprimioTermica) {
+        this.imprimirTicketCuenta(cuenta, ncf);
+      }
+
       // Si todas las cuentas están pagadas, descontar inventario y cerrar la orden
       if (this.cuentas.every(c => c.pagado)) {
         try {
@@ -418,22 +434,6 @@ export class BillSplitComponent implements OnInit {
           console.error('[BillSplit] Error descontando inventario:', invErr);
         }
         await this.ordersService.cerrarOrden(this.orden.id);
-
-        // Imprimir recibo — térmica si hay agente+impresora caja, si no fallback al navegador
-        let imprimioTermica = false;
-        try {
-          imprimioTermica = await this.printService.imprimirReciboRestaurant({
-            orden: this.orden,
-            propina: this.propinaGlobal,
-            formaPago: cuenta.forma_pago,
-            negocioNombre: this.negocioNombre
-          });
-        } catch {
-          console.warn('[BillSplit] Error en impresora térmica, abriendo navegador');
-        }
-        if (!imprimioTermica) {
-          this.abrirTicketEnNavegador(cuenta.forma_pago, ncf, cuenta.tipo_ncf, cuenta.rnc_cliente);
-        }
 
         Swal.fire({
           icon: 'success',
@@ -503,6 +503,119 @@ export class BillSplitComponent implements OnInit {
   formatModificadores(modificadores: any[]): string {
     if (!modificadores || !modificadores.length) return '';
     return modificadores.map(m => m.nombre).join(', ');
+  }
+
+  private imprimirTicketCuenta(cuenta: CuentaComensal, ncf?: string | null): void {
+    if (!this.orden) return;
+
+    const ancho   = this.formatoTicket === '58mm' ? '54mm' : '76mm';
+    const anchoPx = this.formatoTicket === '58mm' ? 200 : 280;
+    const fs      = this.formatoTicket === '58mm' ? 10 : 12;
+
+    const mesa = this.orden.mesa ? `Mesa ${this.orden.mesa.numero_mesa}` : 'Pedido';
+    const ordenRef = this.orden.id.slice(-6).toUpperCase();
+    const totalCuentas = this.cuentas.length;
+
+    // Título de la cuenta según modo
+    let tituloCuenta = '';
+    if (this.modoDivision === 'partes_iguales') {
+      tituloCuenta = `Parte ${cuenta.numero} de ${totalCuentas}`;
+    } else if (this.modoDivision === 'por_comensal') {
+      tituloCuenta = `Comensal ${cuenta.numero}`;
+    }
+
+    // Ítems a mostrar: los de la cuenta (por_comensal) o todos divididos (partes_iguales / individual)
+    let itemsHTML = '';
+    if (this.modoDivision === 'por_comensal' && cuenta.items.length > 0) {
+      itemsHTML = cuenta.items
+        .map(i => `<tr><td>${i.cantidad}× ${i.menu_item?.nombre || 'Item'}</td><td class="r">RD$ ${(i.subtotal || 0).toFixed(2)}</td></tr>`)
+        .join('');
+    } else if (this.modoDivision === 'partes_iguales') {
+      itemsHTML = `<tr><td colspan="2" style="text-align:center;color:#666;font-size:${fs - 1}px">
+        ${totalCuentas} personas · División equitativa</td></tr>`;
+      itemsHTML += (this.orden.items || [])
+        .filter(i => i.estado !== 'cancelado')
+        .map(i => {
+          const montoParte = (i.subtotal / totalCuentas);
+          return `<tr><td style="color:#888">${i.cantidad}× ${i.menu_item?.nombre || 'Item'}</td><td class="r" style="color:#888">RD$ ${montoParte.toFixed(2)}</td></tr>`;
+        }).join('');
+    } else {
+      itemsHTML = (this.orden.items || [])
+        .filter(i => i.estado !== 'cancelado')
+        .map(i => `<tr><td>${i.cantidad}× ${i.menu_item?.nombre || 'Item'}</td><td class="r">RD$ ${(i.subtotal || 0).toFixed(2)}</td></tr>`)
+        .join('');
+    }
+
+    const itbisRow = this.modoImpuesto !== 'sin_impuesto' && cuenta.subtotal > 0
+      ? (() => {
+          const itbis = this.modoImpuesto === 'encima'
+            ? cuenta.subtotal * this.tasaItbis
+            : cuenta.subtotal - (cuenta.subtotal / (1 + this.tasaItbis));
+          return itbis > 0 ? `<tr><td>ITBIS (${Math.round(this.tasaItbis * 100)}%)</td><td class="r">RD$ ${itbis.toFixed(2)}</td></tr>` : '';
+        })()
+      : '';
+
+    const propinaRow = cuenta.propina > 0
+      ? `<tr><td>Propina</td><td class="r">RD$ ${cuenta.propina.toFixed(2)}</td></tr>` : '';
+
+    const ncfSection = ncf ? `
+      <div class="div"></div>
+      <p class="c bold" style="font-size:${fs - 1}px">COMPROBANTE FISCAL</p>
+      <p class="c" style="font-size:${fs - 1}px">Tipo: ${cuenta.tipo_ncf || ''}</p>
+      <p class="c bold" style="letter-spacing:1px">${ncf}</p>
+      ${cuenta.rnc_cliente ? `<p class="c small">RNC: ${cuenta.rnc_cliente}</p>` : ''}
+      ${cuenta.nombre_cliente_fiscal ? `<p class="c small">${cuenta.nombre_cliente_fiscal}</p>` : ''}` : '';
+
+    const piePagina = ncf
+      ? `<p class="small c">─── DOCUMENTO FISCAL ───</p>`
+      : `<p class="small c">─── DOCUMENTO NO FISCAL ───</p>`;
+
+    const tituloSeccion = tituloCuenta
+      ? `<div class="div"></div><p class="c bold">${tituloCuenta}</p>` : '';
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
+<style>
+  @page { size: ${this.formatoTicket} auto; margin: 3mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Courier New', monospace; width: ${ancho}; margin: 0 auto; font-size: ${fs}px; line-height: 1.4; }
+  h2 { text-align: center; margin: 4px 0; font-size: ${fs + 2}px; }
+  p { text-align: center; margin: 2px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 1px 0; vertical-align: top; }
+  .r { text-align: right; white-space: nowrap; padding-left: 4px; }
+  .div { border-top: 1px dashed #000; margin: 5px 0; }
+  .total td { font-weight: bold; font-size: ${fs + 2}px; border-top: 1px solid #000; padding-top: 3px; }
+  .c { text-align: center; }
+  .bold { font-weight: bold; }
+  .small { font-size: ${fs - 2}px; color: #555; }
+  @media print { body { width: ${ancho}; } }
+</style></head><body>
+<h2>${this.negocioNombre || 'RESTAURANTE'}</h2>
+${tituloSeccion}
+<div class="div"></div>
+<p>${mesa}  |  Orden #${ordenRef}</p>
+<div class="div"></div>
+<table>${itemsHTML}</table>
+<div class="div"></div>
+<table>
+  <tr><td>Subtotal</td><td class="r">RD$ ${cuenta.subtotal.toFixed(2)}</td></tr>
+  ${itbisRow}${propinaRow}
+  <tr class="total"><td>TOTAL (${cuenta.forma_pago})</td><td class="r">RD$ ${cuenta.total.toFixed(2)}</td></tr>
+</table>
+${ncfSection}
+<div class="div"></div>
+${piePagina}
+<p class="small">¡Gracias por su visita!</p>
+<p class="small">${new Date().toLocaleString('es-DO')}</p>
+</body></html>`;
+
+    const w = window.open('', '_blank', `width=${anchoPx + 40},height=600`);
+    if (w) {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url  = URL.createObjectURL(blob);
+      w.location.href = url;
+      setTimeout(() => { w.print(); URL.revokeObjectURL(url); }, 600);
+    }
   }
 
   private abrirTicketEnNavegador(formaPago: string, ncf?: string | null, tipoNcf?: string, rncCliente?: string): void {
