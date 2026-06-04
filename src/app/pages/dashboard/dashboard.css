@@ -84,8 +84,59 @@
 }
 @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-/* ── QUICK ACTIONS ─────────────────────────────────────────── */
+/* ── QUICK CARDS ───────────────────────────────────────────── */
 .quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+@media (max-width: 768px) { .quick-actions { grid-template-columns: repeat(2, 1fr); } }
+
+.quick-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  text-decoration: none;
+  color: #1e293b;
+  transition: box-shadow .15s, transform .15s;
+  border: 1px solid #f1f5f9;
+}
+.quick-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); transform: translateY(-1px); color: #1e293b; }
+
+.quick-card-primary { border-left: 3px solid #f59e0b; }
+
+.quick-card-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: #f1f5f9; color: #64748b;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; flex-shrink: 0;
+}
+.quick-card-primary .quick-card-icon { background: #fef3c7; color: #d97706; }
+
+.quick-card-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.quick-card-label { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick-card-sub   { font-size: 0.68rem; color: #94a3b8; }
+.quick-card-arrow { color: #cbd5e1; font-size: 0.7rem; flex-shrink: 0; }
+
+/* bar amount label */
+.bar-amount {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 2px;
+  min-height: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-fill-dim { opacity: 0.6; }
+
+/* ── OLD QUICK ACTIONS (keep for backward compat) ──────────── */
+.quick-btn-actions {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;

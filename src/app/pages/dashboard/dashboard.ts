@@ -65,6 +65,18 @@ export class Dashboard implements OnInit, OnDestroy {
   chartData: ChartData[] = [];
   modoFiscalActivo = false;
   negocioNombre = '';
+  mesasOcupadasCount = 0;
+
+  get saludo(): string {
+    const h = new Date().getHours();
+    if (h < 12) return '¡Buenos días!';
+    if (h < 19) return '¡Buenas tardes!';
+    return '¡Buenas noches!';
+  }
+
+  get fechaHoy(): string {
+    return new Date().toLocaleDateString('es-DO', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
 
   private subscriptions: Subscription[] = [];
   private moduloSubscriptions: Subscription[] = [];
@@ -312,6 +324,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
       const total = mesas?.length || 0;
       const ocupadas = mesas?.filter((m: any) => m.estado === 'ocupada').length || 0;
+      this.mesasOcupadasCount = ocupadas;
       this.upsertStat({
         title: 'Mesas Ocupadas', value: `${ocupadas} / ${total}`,
         change: ocupadas > 0 ? 'Con clientes' : 'Todas libres',

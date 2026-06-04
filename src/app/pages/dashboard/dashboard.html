@@ -4,8 +4,8 @@
   <header class="dash-header">
     <div class="dash-header-left">
       <div class="dash-greeting">
-        <h5 class="mb-0 fw-bold">¡Buenos días! 👋</h5>
-        <small class="text-muted">{{ negocioNombre || 'Tu negocio' }}</small>
+        <h5 class="mb-0 fw-bold">{{ saludo }} 👋</h5>
+        <small class="text-muted">{{ negocioNombre || 'Tu negocio' }} · {{ fechaHoy }}</small>
       </div>
     </div>
 
@@ -54,24 +54,42 @@
     }
   </section>
 
-  <!-- ── ACCESOS RÁPIDOS (solo restaurante sin ventas) ─────── -->
+  <!-- ── ACCESOS RÁPIDOS ───────────────────────────────────── -->
   @if (negociosService.tieneModulo('restaurante') && !negociosService.tieneModulo('ventas')) {
   <section class="quick-actions">
-    <a routerLink="/restaurante" class="quick-btn quick-btn-primary">
-      <i class="fa-solid fa-utensils"></i>
-      <span>Mesas y Órdenes</span>
+    <a routerLink="/restaurante" class="quick-card quick-card-primary">
+      <div class="quick-card-icon"><i class="fa-solid fa-utensils"></i></div>
+      <div class="quick-card-info">
+        <span class="quick-card-label">Mesas y Órdenes</span>
+        <span class="quick-card-sub">
+          {{ mesasOcupadasCount > 0 ? mesasOcupadasCount + ' ocupadas' : 'Todas libres' }}
+        </span>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-card-arrow"></i>
     </a>
-    <a routerLink="/restaurante/admin" class="quick-btn quick-btn-secondary">
-      <i class="fa-solid fa-bowl-food"></i>
-      <span>Menú / Platos</span>
+    <a routerLink="/restaurante/admin" class="quick-card">
+      <div class="quick-card-icon"><i class="fa-solid fa-bowl-food"></i></div>
+      <div class="quick-card-info">
+        <span class="quick-card-label">Menú / Platos</span>
+        <span class="quick-card-sub">Categorías y precios</span>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-card-arrow"></i>
     </a>
-    <a routerLink="/restaurante/reportes" class="quick-btn quick-btn-secondary">
-      <i class="fa-solid fa-chart-bar"></i>
-      <span>Reportes</span>
+    <a routerLink="/restaurante/reportes" class="quick-card">
+      <div class="quick-card-icon"><i class="fa-solid fa-chart-bar"></i></div>
+      <div class="quick-card-info">
+        <span class="quick-card-label">Reportes</span>
+        <span class="quick-card-sub">Ventas y análisis</span>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-card-arrow"></i>
     </a>
-    <a routerLink="/admin/usuarios" class="quick-btn quick-btn-secondary">
-      <i class="fa-solid fa-users"></i>
-      <span>Usuarios</span>
+    <a routerLink="/admin/usuarios" class="quick-card">
+      <div class="quick-card-icon"><i class="fa-solid fa-users"></i></div>
+      <div class="quick-card-info">
+        <span class="quick-card-label">Usuarios</span>
+        <span class="quick-card-sub">Roles y accesos</span>
+      </div>
+      <i class="fa-solid fa-chevron-right quick-card-arrow"></i>
     </a>
   </section>
   }
@@ -119,8 +137,13 @@
           <div class="chart-bars">
             @for (data of chartData; track data.label) {
               <div class="bar-col">
+                <div class="bar-amount">{{ data.value > 0 ? formatearMoneda(data.value) : '' }}</div>
                 <div class="bar-wrap">
-                  <div class="bar-fill" [style.height.%]="data.percentage" [title]="formatearMoneda(data.value)"></div>
+                  <div class="bar-fill"
+                    [style.height.%]="data.percentage < 8 && data.value > 0 ? 8 : data.percentage"
+                    [title]="formatearMoneda(data.value)"
+                    [class.bar-fill-dim]="data.percentage < 30">
+                  </div>
                 </div>
                 <span class="bar-label">{{ data.label }}</span>
               </div>
