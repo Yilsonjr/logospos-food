@@ -71,6 +71,10 @@
                 <td>Ventas Tarjeta:</td>
                 <td class="text-right">{{ formatearMoneda(datos.ventas_tarjeta) }}</td>
             </tr>
+            <tr class="fw-bold" style="border-top:1px dashed #ccc">
+                <td>Total Ventas:</td>
+                <td class="text-right">{{ formatearMoneda(datos.ventas_efectivo + datos.ventas_tarjeta) }}</td>
+            </tr>
             <tr>
                 <td>Entradas (+):</td>
                 <td class="text-right text-success">{{ formatearMoneda(datos.total_entradas) }}</td>

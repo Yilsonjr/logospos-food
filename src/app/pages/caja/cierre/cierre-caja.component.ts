@@ -148,6 +148,7 @@ export class CierreCajaComponent implements OnInit, OnDestroy {
     if (!this.cajaActual) return;
     this.montoEsperado = this.cajaActual.monto_inicial +
       this.ventasEfectivo +
+      this.ventasTarjeta +
       this.totalEntradas -
       this.totalSalidas;
   }
