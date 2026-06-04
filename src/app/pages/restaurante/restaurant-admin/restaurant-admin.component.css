@@ -1,3 +1,35 @@
+/* ── Plantillas de modificadores ────────────────── */
+.mod-templates-panel {
+  background: #fffbeb;
+  border: 1px dashed #fcd34d;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+.mod-tpl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 20px;
+  padding: 3px 8px 3px 10px;
+  font-size: 0.78rem;
+}
+.mod-tpl-nombre { font-weight: 600; color: #1e293b; }
+.mod-tpl-count  { color: #94a3b8; font-size: .7rem; }
+.mod-tpl-apply {
+  border: none; background: #f59e0b; color: #fff;
+  border-radius: 12px; padding: 2px 8px; font-size: .72rem;
+  font-weight: 600; cursor: pointer; transition: opacity .15s;
+}
+.mod-tpl-apply:hover:not(:disabled) { opacity: .85; }
+.mod-tpl-apply:disabled { opacity: .5; cursor: not-allowed; }
+.mod-tpl-del {
+  border: none; background: transparent; color: #94a3b8;
+  padding: 2px 4px; cursor: pointer; border-radius: 50%; font-size: .75rem;
+}
+.mod-tpl-del:hover { color: #ef4444; background: #fee2e2; }
+
 /* ── Drawer tabs ────────────────────────────────── */
 .plato-drawer-tabs {
   display: flex;

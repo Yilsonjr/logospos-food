@@ -628,4 +628,31 @@ export class RestaurantOrdersService {
       .eq('id', id);
     if (error) throw error;
   }
+
+  // ── Plantillas de modificadores ───────────────────────────
+
+  async cargarPlantillas(): Promise<{ id: string; grupo_nombre: string; opciones: { nombre: string; precio_adicional: number }[] }[]> {
+    const { data, error } = await this.supabaseService.client
+      .from('modifier_templates')
+      .select('id, grupo_nombre, opciones')
+      .eq('negocio_id', this.negocioId)
+      .order('grupo_nombre');
+    if (error) throw error;
+    return data || [];
+  }
+
+  async guardarPlantilla(grupo_nombre: string, opciones: { nombre: string; precio_adicional: number }[]): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('modifier_templates')
+      .insert({ negocio_id: this.negocioId, grupo_nombre, opciones });
+    if (error) throw error;
+  }
+
+  async eliminarPlantilla(id: string): Promise<void> {
+    const { error } = await this.supabaseService.client
+      .from('modifier_templates')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  }
 }

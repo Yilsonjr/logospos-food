@@ -355,7 +355,7 @@
               <i class="fa-solid fa-circle-info"></i> Info del Plato
             </button>
             <button class="plato-drawer-tab" [class.active]="drawerTab==='acompanantes'"
-              (click)="drawerTab='acompanantes'; editandoPlato && cargarModificadores(editandoPlato.id)"
+              (click)="drawerTab='acompanantes'; editandoPlato && cargarModificadores(editandoPlato.id); cargarPlantillas()"
               [disabled]="!editandoPlato">
               <i class="fa-solid fa-sliders"></i> Acompañantes
               @if (modificadores.length > 0) {
@@ -633,6 +633,32 @@
                 <i class="fa-solid fa-lightbulb me-1 text-warning"></i>Sin opciones aún. Agrega guarniciones, salsas, tamaños…
               </p>
             }
+            <!-- ── Plantillas guardadas ─────────────────────── -->
+            @if (modTemplates.length > 0) {
+              <div class="mod-templates-panel mt-3">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="fa-solid fa-bookmark text-warning fa-sm"></i>
+                  <span class="fw-bold small text-muted text-uppercase" style="font-size:.68rem;letter-spacing:.05em">Plantillas guardadas</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                  @for (tpl of modTemplates; track tpl.id) {
+                    <div class="mod-tpl-chip">
+                      <span class="mod-tpl-nombre">{{ tpl.grupo_nombre }}</span>
+                      <span class="mod-tpl-count">{{ tpl.opciones.length }} opciones</span>
+                      <button class="mod-tpl-apply" (click)="aplicarPlantilla(tpl)"
+                        [disabled]="aplicandoPlantilla" title="Aplicar al plato">
+                        @if (aplicandoPlantilla) { <span class="spinner-border spinner-border-sm" style="width:10px;height:10px"></span> }
+                        @else { <i class="fa-solid fa-bolt"></i> Usar }
+                      </button>
+                      <button class="mod-tpl-del" (click)="eliminarPlantilla(tpl.id, tpl.grupo_nombre)" title="Eliminar plantilla">
+                        <i class="fa-solid fa-xmark"></i>
+                      </button>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
             <div class="mod-add-form mt-2">
               <div class="row g-2 align-items-end">
                 <div class="col-12 col-md-3">
@@ -667,6 +693,12 @@
                     [disabled]="guardandoMod || !modForm.grupo_nombre.trim() || !modForm.nombre.trim()">
                     @if (guardandoMod) { <span class="spinner-border spinner-border-sm"></span> }
                     @else { <i class="fa-solid fa-plus"></i> Agregar }
+                  </button>
+                  <button class="btn btn-outline-warning btn-sm" (click)="guardarComoPlantilla()"
+                    [disabled]="guardandoPlantilla || !modForm.grupo_nombre.trim()"
+                    title="Guardar el grupo actual como plantilla reutilizable">
+                    @if (guardandoPlantilla) { <span class="spinner-border spinner-border-sm"></span> }
+                    @else { <i class="fa-solid fa-bookmark"></i> }
                   </button>
                 </div>
               </div>

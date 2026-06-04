@@ -90,6 +90,11 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
   cargandoMods = false;
   subiendoImagen = false;
 
+  // Plantillas de modificadores (nueva funcionalidad, no toca lo anterior)
+  modTemplates: { id: string; grupo_nombre: string; opciones: { nombre: string; precio_adicional: number }[] }[] = [];
+  aplicandoPlantilla = false;
+  guardandoPlantilla = false;
+
   // ── Inventario ────────────────────────────────────────────
   inventarioItems: RestaurantInventoryItem[] = [];
   private _invBusqueda = '';
@@ -647,6 +652,79 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     } catch (e: any) {
       Swal.fire('Error', e.message, 'error');
     }
+  }
+
+  // ── Plantillas de modificadores ──────────────────────────
+
+  async cargarPlantillas(): Promise<void> {
+    try {
+      this.modTemplates = await this.ordersService.cargarPlantillas();
+      this.cdr.detectChanges();
+    } catch (e) { console.warn('[RestaurantAdmin] Plantillas no disponibles:', e); }
+  }
+
+  async aplicarPlantilla(template: typeof this.modTemplates[0]): Promise<void> {
+    if (!this.editandoPlato || this.aplicandoPlantilla) return;
+    this.aplicandoPlantilla = true;
+    try {
+      for (const op of template.opciones) {
+        await this.ordersService.crearModificador({
+          menu_item_id: this.editandoPlato.id,
+          grupo_nombre: template.grupo_nombre,
+          nombre: op.nombre,
+          precio_adicional: op.precio_adicional || 0,
+          obligatorio: false,
+          max_seleccion: 1,
+          orden: this.modificadores.length + 1,
+          activo: true
+        });
+      }
+      await this.cargarModificadores(this.editandoPlato.id);
+      Swal.fire({ icon: 'success', title: `Plantilla "${template.grupo_nombre}" aplicada`, timer: 1500, showConfirmButton: false });
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    } finally {
+      this.aplicandoPlantilla = false;
+    }
+  }
+
+  async guardarComoPlantilla(): Promise<void> {
+    if (!this.modForm.grupo_nombre.trim()) {
+      Swal.fire('Falta el grupo', 'Escribe el nombre del grupo antes de guardar la plantilla', 'warning');
+      return;
+    }
+    const grupoOpciones = this.modificadores
+      .filter(m => m.grupo_nombre === this.modForm.grupo_nombre.trim())
+      .map(m => ({ nombre: m.nombre, precio_adicional: m.precio_adicional || 0 }));
+
+    if (!grupoOpciones.length) {
+      Swal.fire('Sin opciones', 'El grupo no tiene opciones para guardar como plantilla', 'warning');
+      return;
+    }
+    this.guardandoPlantilla = true;
+    try {
+      await this.ordersService.guardarPlantilla(this.modForm.grupo_nombre.trim(), grupoOpciones);
+      await this.cargarPlantillas();
+      Swal.fire({ icon: 'success', title: 'Plantilla guardada', timer: 1500, showConfirmButton: false });
+    } catch (e: any) {
+      Swal.fire('Error', e.message, 'error');
+    } finally {
+      this.guardandoPlantilla = false;
+    }
+  }
+
+  async eliminarPlantilla(id: string, nombre: string): Promise<void> {
+    const { isConfirmed } = await Swal.fire({
+      title: `¿Eliminar plantilla "${nombre}"?`,
+      icon: 'warning', showCancelButton: true,
+      confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444'
+    });
+    if (!isConfirmed) return;
+    try {
+      await this.ordersService.eliminarPlantilla(id);
+      await this.cargarPlantillas();
+    } catch (e: any) { Swal.fire('Error', e.message, 'error'); }
   }
 
   async subirImagenPlato(event: Event): Promise<void> {
