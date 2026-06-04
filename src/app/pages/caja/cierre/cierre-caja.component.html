@@ -90,8 +90,14 @@
                   </div>
                   <div class="col-md-6">
                     <div class="bg-white p-2 rounded border d-flex justify-content-between">
-                      <span class="text-muted small fw-bold">Ventas Efec.:</span>
-                      <span class="fw-bold text-dark">{{ formatearMoneda(ventasEfectivo) }}</span>
+                      <span class="text-muted small fw-bold"><i class="fa-solid fa-money-bill-wave text-success me-1"></i>Ventas Efec.:</span>
+                      <span class="fw-bold text-success">{{ formatearMoneda(ventasEfectivo) }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="bg-white p-2 rounded border d-flex justify-content-between">
+                      <span class="text-muted small fw-bold"><i class="fa-solid fa-credit-card text-primary me-1"></i>Ventas Tarjeta:</span>
+                      <span class="fw-bold text-primary">{{ formatearMoneda(ventasTarjeta) }}</span>
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -106,10 +112,17 @@
                       <span class="fw-bold text-danger">-{{ formatearMoneda(totalSalidas) }}</span>
                     </div>
                   </div>
+                  <!-- Total ventas subtotal -->
+                  <div class="col-12">
+                    <div class="bg-white p-2 rounded border d-flex justify-content-between border-dark border-opacity-25">
+                      <span class="text-dark small fw-bold">Total Ventas:</span>
+                      <span class="fw-bold text-dark">{{ formatearMoneda(ventasEfectivo + ventasTarjeta) }}</span>
+                    </div>
+                  </div>
                 </div>
                 <div
                   class="d-flex justify-content-between align-items-center pt-2 border-top border-primary border-opacity-25">
-                  <span class="fw-bold text-primary small text-uppercase">Efectivo Esperado</span>
+                  <span class="fw-bold text-primary small text-uppercase">Total Esperado</span>
                   <span class="h5 fw-bold text-primary mb-0">{{ formatearMoneda(montoEsperado) }}</span>
                 </div>
               </div>
