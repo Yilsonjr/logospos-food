@@ -232,7 +232,8 @@ export class PrintService {
     const cajaP = impresoras.find(p => p.tipo === 'caja' && p.activa);
     if (!cajaP) return false;
 
-    const bytes = this.generarReciboRestaurant(cajaP, params);
+    const logoBytes = await this.fetchLogoBytes(cajaP.caracteres_por_linea || 42);
+    const bytes = this.generarReciboRestaurant(cajaP, params, logoBytes);
     await this.enviarAlAgente(url, cajaP.ip, cajaP.puerto, bytes, cajaP.copies, cajaP.tipo_conexion, cajaP.puerto_usb);
     return true;
   }
@@ -259,7 +260,8 @@ export class PrintService {
     const cajaP = impresoras.find(p => p.tipo === 'caja' && p.activa);
     if (!cajaP) return false;
 
-    const bytes = this.generarPrecuenta(cajaP, params);
+    const logoBytes = await this.fetchLogoBytes(cajaP.caracteres_por_linea || 42);
+    const bytes = this.generarPrecuenta(cajaP, params, logoBytes);
     await this.enviarAlAgente(url, cajaP.ip, cajaP.puerto, bytes, cajaP.copies, cajaP.tipo_conexion, cajaP.puerto_usb);
     return true;
   }
@@ -274,7 +276,8 @@ export class PrintService {
       impuesto: number;
       total: number;
       negocioNombre: string;
-    }
+    },
+    logoBytes: number[] = []
   ): number[] {
     const chars = printer.caracteres_por_linea || 42;
     const buf: number[] = [];
@@ -288,8 +291,10 @@ export class PrintService {
       linea(izq + ' '.repeat(espacio) + der);
     };
 
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON);
-    if (params.negocioNombre.length <= Math.floor(chars / 2)) {
+    push(...INIT, ...ALIGN_CENTER);
+    if (logoBytes.length) { push(...logoBytes); push(LF); }
+    push(...BOLD_ON);
+    if (!logoBytes.length && params.negocioNombre.length <= Math.floor(chars / 2)) {
       push(...FONT_DOUBLE); linea(params.negocioNombre); push(...FONT_NORMAL);
     } else {
       linea(params.negocioNombre);
@@ -414,7 +419,8 @@ export class PrintService {
       propina: number;
       formaPago: string;
       negocioNombre: string;
-    }
+    },
+    logoBytes: number[] = []
   ): number[] {
     const { orden, propina, formaPago, negocioNombre } = params;
     const chars = printer.caracteres_por_linea || 42;
@@ -431,8 +437,10 @@ export class PrintService {
     const fmt   = (n: number) => `RD$ ${n.toFixed(2)}`;
 
     // Cabecera
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON);
-    if (negocioNombre.length <= Math.floor(chars / 2)) {
+    push(...INIT, ...ALIGN_CENTER);
+    if (logoBytes.length) { push(...logoBytes); push(LF); }
+    push(...BOLD_ON);
+    if (!logoBytes.length && negocioNombre.length <= Math.floor(chars / 2)) {
       push(...FONT_DOUBLE); linea(negocioNombre); push(...FONT_NORMAL);
     } else {
       linea(negocioNombre);
@@ -555,6 +563,66 @@ export class PrintService {
     });
   }
 
+  // ============================================================
+  // LOGO ESC/POS — Conversión de imagen a bitmap raster
+  // ============================================================
+
+  private async fetchLogoBytes(chars: number): Promise<number[]> {
+    const logoUrl: string | null | undefined =
+      (this.negociosService as any)['negocioSubject']?.value?.logo_url;
+    if (!logoUrl) return [];
+    const printerDots = chars >= 42 ? 576 : 384;
+    return this.logoAEscPos(logoUrl, printerDots).catch(() => []);
+  }
+
+  private logoAEscPos(logoUrl: string, printerWidthDots: number): Promise<number[]> {
+    const maxDots = Math.min(Math.floor(printerWidthDots * 0.55), 280);
+
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      const tid = setTimeout(() => resolve([]), 5000);
+
+      img.onload = () => {
+        clearTimeout(tid);
+        try {
+          const scale = Math.min(maxDots / img.width, maxDots / img.height, 1);
+          const w  = Math.max(8, Math.floor(img.width  * scale));
+          const h  = Math.max(1, Math.floor(img.height * scale));
+          const wB = Math.ceil(w / 8);
+          const wD = wB * 8;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = wD; canvas.height = h;
+          const ctx = canvas.getContext('2d')!;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, wD, h);
+          ctx.drawImage(img, 0, 0, w, h);
+
+          const { data } = ctx.getImageData(0, 0, wD, h);
+          const bmp: number[] = [];
+          for (let r = 0; r < h; r++) {
+            for (let c = 0; c < wD; c += 8) {
+              let byte = 0;
+              for (let bit = 0; bit < 8; bit++) {
+                const i = (r * wD + c + bit) * 4;
+                const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                if (luma < 128) byte |= (0x80 >> bit);
+              }
+              bmp.push(byte);
+            }
+          }
+
+          // GS v 0 — Raster Bit Image (ESC/POS universal)
+          resolve([GS, 0x76, 0x30, 0x00, wB & 0xFF, wB >> 8, h & 0xFF, h >> 8, ...bmp]);
+        } catch { resolve([]); }
+      };
+
+      img.onerror = () => { clearTimeout(tid); resolve([]); };
+      img.src = logoUrl;
+    });
+  }
+
   private async enviarAlAgente(
     agentUrl:  string,
     ip:        string,
@@ -640,8 +708,11 @@ export class PrintService {
       hour: '2-digit', minute: '2-digit'
     });
 
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON);
-    if (negocioNombre.length <= Math.floor(chars / 2)) {
+    const logoBytes = await this.fetchLogoBytes(chars);
+    push(...INIT, ...ALIGN_CENTER);
+    if (logoBytes.length) { push(...logoBytes); push(LF); }
+    push(...BOLD_ON);
+    if (!logoBytes.length && negocioNombre.length <= Math.floor(chars / 2)) {
       push(...FONT_DOUBLE); linea(negocioNombre); push(...FONT_NORMAL);
     } else {
       linea(negocioNombre);
@@ -703,7 +774,8 @@ export class PrintService {
     const cajaP = impresoras.find(p => p.tipo === 'caja' && p.activa);
     if (!cajaP) return false;
 
-    const bytes = this.generarTicketCierre(cajaP, datos);
+    const logoBytes = await this.fetchLogoBytes(cajaP.caracteres_por_linea || 42);
+    const bytes = this.generarTicketCierre(cajaP, datos, logoBytes);
     await this.enviarAlAgente(url, cajaP.ip, cajaP.puerto, bytes, cajaP.copies, cajaP.tipo_conexion, cajaP.puerto_usb);
     return true;
   }
@@ -725,7 +797,8 @@ export class PrintService {
       usuario_apertura: string;
       usuario_cierre?: string;
       negocioNombre: string;
-    }
+    },
+    logoBytes: number[] = []
   ): number[] {
     const chars = printer.caracteres_por_linea || 42;
     const buf: number[] = [];
@@ -744,7 +817,9 @@ export class PrintService {
       linea(label + ' '.repeat(Math.max(1, pad)) + valor);
     };
 
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON, ...FONT_DOUBLE);
+    push(...INIT, ...ALIGN_CENTER);
+    if (logoBytes.length) { push(...logoBytes); push(LF); }
+    push(...BOLD_ON, ...FONT_DOUBLE);
     linea('CIERRE DE CAJA');
     push(...FONT_NORMAL, ...BOLD_OFF);
     linea(datos.negocioNombre);
@@ -807,11 +882,12 @@ export class PrintService {
     const url = this.agentUrl;
     if (!url) throw new Error('No hay agente de impresión configurado.');
 
-    const bytes = this.generarPaginaPrueba(printer, negocioNombre);
+    const logoBytes = await this.fetchLogoBytes(printer.caracteres_por_linea || 42);
+    const bytes = this.generarPaginaPrueba(printer, negocioNombre, logoBytes);
     await this.enviarAlAgente(url, printer.ip, printer.puerto, bytes, 1, printer.tipo_conexion, printer.puerto_usb);
   }
 
-  private generarPaginaPrueba(printer: RestaurantPrinter, negocioNombre: string): number[] {
+  private generarPaginaPrueba(printer: RestaurantPrinter, negocioNombre: string, logoBytes: number[] = []): number[] {
     const chars = printer.caracteres_por_linea || 42;
     const buf: number[] = [];
 
@@ -820,7 +896,9 @@ export class PrintService {
     const linea = (str = '')           => { texto(str); push(LF); };
     const sep   = (c = '-')            => linea(c.repeat(chars));
 
-    push(...INIT, ...ALIGN_CENTER, ...BOLD_ON, ...FONT_DOUBLE);
+    push(...INIT, ...ALIGN_CENTER);
+    if (logoBytes.length) { push(...logoBytes); push(LF); }
+    push(...BOLD_ON, ...FONT_DOUBLE);
     linea('PRUEBA DE IMPRESION');
     push(...FONT_NORMAL, ...BOLD_OFF);
     sep('=');
