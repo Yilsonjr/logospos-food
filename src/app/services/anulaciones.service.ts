@@ -41,6 +41,7 @@ export class AnulacionesService {
     motivoDetalle?: string
   ): Promise<{ ok: boolean; ncf_b04: string | null }> {
     const negocioId = this.authService.getNegocioId();
+    console.log('[anularOrden] paymentId:', paymentId, '| negocioId:', negocioId);
 
     const { data, error } = await this.supabaseService.client.rpc(
       'anular_orden_restaurante',
