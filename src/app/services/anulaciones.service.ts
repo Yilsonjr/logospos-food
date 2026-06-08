@@ -19,7 +19,6 @@ export class AnulacionesService {
     motivoDetalle?: string
   ): Promise<{ ok: boolean; ncf_b04: string | null }> {
     const negocioId = this.authService.getNegocioId();
-    const usuarioId = this.authService.getUserId();
 
     const { data, error } = await this.supabaseService.client.rpc(
       'anular_venta_completa',
@@ -27,7 +26,7 @@ export class AnulacionesService {
         p_venta_id:          ventaId,
         p_motivo_categoria:  motivoCategoria,
         p_motivo_detalle:    motivoDetalle || null,
-        p_usuario_id:        usuarioId,
+        p_usuario_id:        null,
         p_negocio_id:        negocioId
       }
     );
@@ -42,7 +41,6 @@ export class AnulacionesService {
     motivoDetalle?: string
   ): Promise<{ ok: boolean; ncf_b04: string | null }> {
     const negocioId = this.authService.getNegocioId();
-    const usuarioId = this.authService.getUserId();
 
     const { data, error } = await this.supabaseService.client.rpc(
       'anular_orden_restaurante',
@@ -50,7 +48,7 @@ export class AnulacionesService {
         p_payment_id:        paymentId,
         p_motivo_categoria:  motivoCategoria,
         p_motivo_detalle:    motivoDetalle || null,
-        p_usuario_id:        usuarioId,
+        p_usuario_id:        null,
         p_negocio_id:        negocioId
       }
     );

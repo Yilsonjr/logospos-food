@@ -1162,7 +1162,18 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  reimprimirTicket(orden: any): void {
+  async reimprimirTicket(orden: any): Promise<void> {
+    // Intentar impresora térmica de caja primero
+    try {
+      const imprimioTermica = await this.printService.reimprimirReciboRestaurant(
+        orden, this.negocioNombre, this.negocioRnc
+      );
+      if (imprimioTermica) return;
+    } catch (e: any) {
+      console.warn('Thermal reprint failed, falling back to browser:', e.message);
+    }
+
+    // Fallback: ventana del navegador
     const fmt = this.negocioFormatoTicket;
     const ancho = fmt === '58mm' ? '54mm' : '76mm';
     const anchoPx = fmt === '58mm' ? 200 : 280;

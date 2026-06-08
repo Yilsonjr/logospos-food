@@ -453,6 +453,18 @@ export class PrintService {
       linea(negocioNombre);
     }
     push(...BOLD_OFF);
+    if (negocioRnc) linea(`RNC: ${negocioRnc}`);
+
+    // Comprobante fiscal en cabecera (si aplica)
+    if (ncf) {
+      sep('-');
+      push(...BOLD_ON); linea('COMPROBANTE FISCAL'); push(...BOLD_OFF);
+      if (tipoNcf) linea(`Tipo: ${tipoNcf}`);
+      push(...BOLD_ON); linea(ncf); push(...BOLD_OFF);
+      if (rncCliente)          linea(`RNC: ${rncCliente}`);
+      if (nombreClienteFiscal) linea(nombreClienteFiscal);
+    }
+
     sep('=');
 
     // Info orden
@@ -503,11 +515,56 @@ export class PrintService {
 
     // Pie
     push(...ALIGN_CENTER);
+    if (ncf) linea('--- DOCUMENTO FISCAL ---');
     linea('Gracias por su visita!');
+    if (esReimpresion) {
+      const ts = new Date().toLocaleString('es-DO', { dateStyle: 'short', timeStyle: 'short' });
+      linea(`REIMPRESION - ${ts}`);
+    }
     push(LF, LF);
 
     if (printer.corte_automatico) push(...CUT_FULL);
     return buf;
+  }
+
+  // ============================================================
+  // Reimpresión térmica de orden de restaurante
+  // ============================================================
+
+  async reimprimirReciboRestaurant(orden: any, negocioNombre: string, negocioRnc?: string): Promise<boolean> {
+    const url = this.agentUrl;
+    if (!url) return false;
+
+    let impresoras: RestaurantPrinter[] = [];
+    try { impresoras = await this.cargarImpresoras(); } catch { return false; }
+
+    const cajaP = impresoras.find(p => p.tipo === 'caja' && p.activa);
+    if (!cajaP) return false;
+
+    const pago = orden.pagos?.[0];
+    const logoBytes = await this.fetchLogoBytes(cajaP.caracteres_por_linea || 42);
+    const bytes = this.generarReciboRestaurant(cajaP, {
+      orden: {
+        id:       orden.id,
+        mesa:     orden.mesa,
+        items:    orden.items,
+        subtotal: orden.subtotal || 0,
+        impuesto: orden.impuesto || orden.impuestos || 0,
+        total:    orden.total || 0,
+      },
+      propina:             orden.propina || 0,
+      formaPago:           pago?.forma_pago || pago?.metodo_pago || 'efectivo',
+      negocioNombre,
+      negocioRnc,
+      ncf:                 pago?.ncf || undefined,
+      tipoNcf:             pago?.tipo_ncf || undefined,
+      rncCliente:          pago?.rnc_cliente || undefined,
+      nombreClienteFiscal: pago?.nombre_cliente_fiscal || undefined,
+      esReimpresion:       true,
+    }, logoBytes);
+
+    await this.enviarAlAgente(url, cajaP.ip, cajaP.puerto, bytes, cajaP.copies, cajaP.tipo_conexion, cajaP.puerto_usb);
+    return true;
   }
 
   // ============================================================
