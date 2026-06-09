@@ -17,6 +17,7 @@ export interface DatosCierreTicket {
     ventas_mixto: number;
     total_entradas: number;
     total_salidas: number;
+    total_anulaciones?: number;
     monto_esperado: number;
     monto_real: number;
     diferencia: number;

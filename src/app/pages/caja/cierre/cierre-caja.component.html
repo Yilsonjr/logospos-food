@@ -112,6 +112,14 @@
                       <span class="fw-bold text-danger">-{{ formatearMoneda(totalSalidas) }}</span>
                     </div>
                   </div>
+                  @if (totalAnulaciones > 0) {
+                  <div class="col-12">
+                    <div class="bg-white p-2 rounded border border-warning d-flex justify-content-between">
+                      <span class="text-warning small fw-bold"><i class="fa-solid fa-ban me-1"></i>Anulaciones:</span>
+                      <span class="fw-bold text-warning">-{{ formatearMoneda(totalAnulaciones) }}</span>
+                    </div>
+                  </div>
+                  }
                   <!-- Total ventas subtotal -->
                   <div class="col-12">
                     <div class="bg-white p-2 rounded border d-flex justify-content-between border-dark border-opacity-25">

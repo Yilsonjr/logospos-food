@@ -822,6 +822,7 @@ export class PrintService {
     ventas_tarjeta: number;
     total_entradas: number;
     total_salidas: number;
+    total_anulaciones?: number;
     monto_esperado: number;
     monto_real: number;
     diferencia: number;
@@ -855,6 +856,7 @@ export class PrintService {
       ventas_tarjeta: number;
       total_entradas: number;
       total_salidas: number;
+      total_anulaciones?: number;
       monto_esperado: number;
       monto_real: number;
       diferencia: number;
@@ -903,6 +905,7 @@ export class PrintService {
     fila('Tarjeta',   fmt(datos.ventas_tarjeta));
     fila('Entradas',  fmt(datos.total_entradas));
     fila('Salidas',   fmt(datos.total_salidas));
+    if ((datos.total_anulaciones ?? 0) > 0) fila('Anulaciones', fmt(datos.total_anulaciones!));
     sep();
 
     push(...BOLD_ON);

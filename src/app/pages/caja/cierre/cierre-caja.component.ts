@@ -26,6 +26,8 @@ export class CierreCajaComponent implements OnInit, OnDestroy {
   // Movimientos
   totalEntradas: number = 0;
   totalSalidas: number = 0;
+  totalAnulaciones: number = 0;
+  anulacionesEfectivo: number = 0;
 
   // Arqueo
   denominaciones = DENOMINACIONES;
@@ -128,6 +130,16 @@ export class CierreCajaComponent implements OnInit, OnDestroy {
       this.totalSalidas = movimientos
         .filter(m => m.tipo === 'salida')
         .reduce((sum, m) => sum + m.monto, 0);
+      let anulacionesEfectivo = 0;
+      movimientos
+        .filter(m => m.tipo === 'anulacion')
+        .forEach(m => {
+          if (!m.concepto.toLowerCase().includes('(tarjeta)')) anulacionesEfectivo += m.monto;
+        });
+      this.totalAnulaciones = movimientos
+        .filter(m => m.tipo === 'anulacion')
+        .reduce((sum, m) => sum + m.monto, 0);
+      this.anulacionesEfectivo = anulacionesEfectivo;
       console.log('📊 Movimientos cargados:', { entradas: this.totalEntradas, salidas: this.totalSalidas });
 
       // Calcular monto esperado
@@ -150,7 +162,8 @@ export class CierreCajaComponent implements OnInit, OnDestroy {
       this.ventasEfectivo +
       this.ventasTarjeta +
       this.totalEntradas -
-      this.totalSalidas;
+      this.totalSalidas -
+      this.anulacionesEfectivo;
   }
 
   calcularArqueo() {
@@ -264,6 +277,7 @@ export class CierreCajaComponent implements OnInit, OnDestroy {
         ventas_mixto: 0,
         total_entradas: this.totalEntradas,
         total_salidas: this.totalSalidas,
+        total_anulaciones: this.totalAnulaciones,
         monto_esperado: this.montoEsperado,
         monto_real: this.totalContado,
         diferencia: this.diferencia,

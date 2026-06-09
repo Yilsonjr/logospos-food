@@ -83,6 +83,12 @@
                 <td>Salidas (-):</td>
                 <td class="text-right text-danger">{{ formatearMoneda(datos.total_salidas) }}</td>
             </tr>
+            @if ((datos.total_anulaciones ?? 0) > 0) {
+            <tr>
+                <td>Anulaciones (-):</td>
+                <td class="text-right text-warning">{{ formatearMoneda(datos.total_anulaciones ?? 0) }}</td>
+            </tr>
+            }
             <tr class="separator-row">
                 <td colspan="2">
                     <div class="separator"></div>

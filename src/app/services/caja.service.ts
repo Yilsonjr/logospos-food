@@ -332,6 +332,17 @@ export class CajaService {
         .filter(m => m.tipo === 'salida')
         .reduce((sum, m) => sum + m.monto, 0);
 
+      let anulaciones_efectivo = 0;
+      let anulaciones_tarjeta  = 0;
+      movimientos
+        .filter(m => m.tipo === 'anulacion')
+        .forEach(m => {
+          const c = m.concepto.toLowerCase();
+          if (c.includes('(tarjeta)')) anulaciones_tarjeta  += m.monto;
+          else                         anulaciones_efectivo += m.monto;
+        });
+      const total_anulaciones = anulaciones_efectivo + anulaciones_tarjeta;
+
       // Ventas separadas por método de pago.
       // Para cajas cerradas usamos los valores guardados en el cierre (más precisos).
       // Para cajas abiertas derivamos del concepto del movimiento.
@@ -356,8 +367,8 @@ export class CajaService {
       }
 
       const total_ventas = total_ventas_efectivo + total_ventas_tarjeta;
-      // Solo el efectivo entra a la caja física
-      const efectivo_disponible = caja.monto_inicial + total_ventas_efectivo + total_entradas - total_salidas;
+      // Solo las anulaciones de efectivo afectan la caja física
+      const efectivo_disponible = caja.monto_inicial + total_ventas_efectivo + total_entradas - total_salidas - anulaciones_efectivo;
 
       console.log('✅ [CajaService] Resumen generado exitosamente');
 
@@ -370,6 +381,7 @@ export class CajaService {
         total_ventas_tarjeta,
         total_entradas,
         total_salidas,
+        total_anulaciones,
         efectivo_disponible
       };
     } catch (error) {

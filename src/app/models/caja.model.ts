@@ -23,7 +23,7 @@ export interface Caja {
 export interface MovimientoCaja {
   id?: number;
   caja_id: number;
-  tipo: 'entrada' | 'salida' | 'venta';
+  tipo: 'entrada' | 'salida' | 'venta' | 'anulacion';
   concepto: string;
   monto: number;
   referencia?: string;
@@ -66,7 +66,8 @@ export interface ResumenCaja {
   total_ventas_tarjeta: number;   // solo ventas cobradas con tarjeta
   total_entradas: number;
   total_salidas: number;
-  efectivo_disponible: number;    // monto_inicial + ventas_efectivo + entradas - salidas
+  total_anulaciones: number;
+  efectivo_disponible: number;    // monto_inicial + ventas_efectivo + entradas - salidas - anulaciones
 }
 
 // Tipos para crear
@@ -84,7 +85,8 @@ export const ESTADOS_CAJA = [
 export const TIPOS_MOVIMIENTO = [
   { valor: 'entrada', etiqueta: 'Entrada', icono: 'fa-arrow-down', color: 'green' },
   { valor: 'salida', etiqueta: 'Salida', icono: 'fa-arrow-up', color: 'red' },
-  { valor: 'venta', etiqueta: 'Venta', icono: 'fa-shopping-cart', color: 'blue' }
+  { valor: 'venta',     etiqueta: 'Venta',     icono: 'fa-shopping-cart', color: 'blue'   },
+  { valor: 'anulacion', etiqueta: 'Anulación', icono: 'fa-ban',           color: 'orange' }
 ] as const;
 
 // Conceptos comunes

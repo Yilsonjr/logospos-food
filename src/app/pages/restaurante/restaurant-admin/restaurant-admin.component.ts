@@ -1158,7 +1158,7 @@ export class RestaurantAdminComponent implements OnInit, OnDestroy {
             : '(Efectivo)';
           await this.cajaService.registrarMovimiento({
             caja_id: caja.id,
-            tipo: 'salida',
+            tipo: 'anulacion',
             concepto: `Anulación ${mesaLabel} ${metodoLabel}`,
             monto: pago.monto || this.ordenParaAnular.total || 0,
             referencia: this.ordenParaAnular.id,

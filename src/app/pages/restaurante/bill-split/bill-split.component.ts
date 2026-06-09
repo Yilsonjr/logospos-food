@@ -45,6 +45,7 @@ export class BillSplitComponent implements OnInit {
   tasaItbis = 0.18;
   modoImpuesto: 'sin_impuesto' | 'encima' | 'incluido' = 'sin_impuesto';
   negocioNombre = '';
+  negocioRnc = '';
   formatoTicket: '58mm' | '80mm' = '80mm';
 
   // Fiscal
@@ -83,6 +84,7 @@ export class BillSplitComponent implements OnInit {
       this.tasaItbis = negocio?.tasa_itbis ?? 0;
       this.modoImpuesto = negocio?.modo_impuesto ?? 'sin_impuesto';
       this.negocioNombre = negocio?.nombre || '';
+      this.negocioRnc    = negocio?.rnc    || '';
       this.formatoTicket = negocio?.formato_ticket ?? '80mm';
       this.fiscalService.config$.subscribe(c => this.configFiscal = c);
       this.orden = await this.ordersService.obtenerOrdenPorId(this.orderId);
@@ -420,7 +422,12 @@ export class BillSplitComponent implements OnInit {
           orden: this.orden,
           propina: cuenta.propina,
           formaPago: cuenta.forma_pago,
-          negocioNombre: this.negocioNombre
+          negocioNombre: this.negocioNombre,
+          negocioRnc:          this.negocioRnc || undefined,
+          ncf:                 ncf || undefined,
+          tipoNcf:             cuenta.tipo_ncf || undefined,
+          rncCliente:          cuenta.rnc_cliente || undefined,
+          nombreClienteFiscal: cuenta.nombre_cliente_fiscal || undefined,
         });
       } catch {
         console.warn('[BillSplit] Térmica no disponible, usando navegador');
