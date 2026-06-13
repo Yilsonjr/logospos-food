@@ -1738,7 +1738,7 @@
                         <i class="fa-solid fa-eye"></i> Detalle
                       }
                     </button>
-                    @if (orden.estado === 'cerrada') {
+                    @if (orden.estado === 'cerrada' && authService.tienePermiso('restaurante.anular')) {
                       <button class="btn btn-xs btn-outline-danger shadow-sm"
                         (click)="abrirModalAnulacion(orden)"
                         title="Anular cobro de esta orden">
@@ -1878,7 +1878,7 @@
                 title="Reimprimir ticket de esta orden">
                 <i class="fa-solid fa-print"></i> Reimprimir Ticket
               </button>
-              @if (ordenSeleccionada?.estado === 'cerrada') {
+              @if (ordenSeleccionada?.estado === 'cerrada' && authService.tienePermiso('restaurante.anular')) {
                 <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
                   (click)="abrirModalAnulacion(ordenSeleccionada)">
                   <i class="fa-solid fa-ban"></i> Anular cobro

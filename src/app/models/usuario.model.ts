@@ -110,6 +110,7 @@ export const PERMISOS_SISTEMA = {
   'restaurante.mesas': 'Ver Mapa de Mesas',
   'restaurante.ordenes': 'Gestionar Órdenes de Mesa',
   'restaurante.cobrar': 'Cobrar y Procesar Pagos',
+  'restaurante.anular': 'Anular Cobros de Órdenes',
   'restaurante.cocina': 'Pantalla de Cocina (KDS)',
   'restaurante.admin': 'Acceder a Configuración del Restaurante',
   'restaurante.inventario': 'Inventario del Restaurante (Insumos, Recetas)',
@@ -204,7 +205,7 @@ export const ROLES_PREDEFINIDOS = [
     color: '#7c3aed',
     permisos: [
       'dashboard.ver',
-      'restaurante.mesas', 'restaurante.ordenes', 'restaurante.cobrar',
+      'restaurante.mesas', 'restaurante.ordenes', 'restaurante.cobrar', 'restaurante.anular',
       'restaurante.cocina', 'restaurante.admin', 'restaurante.inventario',
       'restaurante.compras', 'restaurante.reportes',
       // Acceso completo a todas las tabs del admin

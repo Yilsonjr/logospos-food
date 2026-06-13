@@ -5,6 +5,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { VentasService } from '../../../services/ventas.service';
 import { FiscalService } from '../../../services/fiscal.service';
 import { AnulacionesService } from '../../../services/anulaciones.service';
+import { AuthService } from '../../../services/auth.service';
 import { Venta, VentaCompleta } from '../../../models/ventas.model';
 import { TIPOS_COMPROBANTE } from '../../../models/fiscal.model';
 import { Subscription } from 'rxjs';
@@ -56,6 +57,7 @@ export class HistorialVentasComponent implements OnInit, OnDestroy {
     private ventasService: VentasService,
     private fiscalService: FiscalService,
     private anulacionesService: AnulacionesService,
+    public authService: AuthService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) { }
